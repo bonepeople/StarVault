@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.module.guide.GuideFragment
+import com.bonepeople.android.starvault.module.home.HomeFragment
 import com.gyf.immersionbar.ktx.immersionBar
 
 class StartActivity : ComponentActivity() {
@@ -31,9 +32,16 @@ class StartActivity : ComponentActivity() {
         }
         setContent { ComposeContent() }
         viewModel.pageState.observeWithLifecycle(this) { pageState ->
-            if (pageState is StartViewModel.PageState.Finish) {
-                StandardActivity.open(GuideFragment())
-                finishAfterTransition()
+            when (pageState) {
+                is StartViewModel.PageState.ToGuide -> {
+                    StandardActivity.open(GuideFragment())
+                    finishAfterTransition()
+                }
+                is StartViewModel.PageState.ToHome -> {
+                    StandardActivity.open(HomeFragment())
+                    finishAfterTransition()
+                }
+                else -> Unit
             }
         }
         viewModel.init()

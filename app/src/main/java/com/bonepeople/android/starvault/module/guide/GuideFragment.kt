@@ -21,8 +21,11 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.bonepeople.android.base.activity.StandardActivity
+import com.bonepeople.android.starvault.global.util.DataUtil
 import com.bonepeople.android.starvault.module.home.HomeFragment
+import kotlinx.coroutines.launch
 
 class GuideFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -48,8 +51,11 @@ class GuideFragment : Fragment() {
                 Text(text = "GuideFragment")
                 Button(
                     onClick = {
-                        StandardActivity.open(HomeFragment())
-                        activity?.finishAfterTransition()
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            DataUtil.appStart.putBoolean(DataUtil.Key.AppStart.HAS_VIEWED_GUIDE, true)
+                            StandardActivity.open(HomeFragment())
+                            activity?.finishAfterTransition()
+                        }
                     }
                 ) {
                     Text(text = "Open HomeFragment")
