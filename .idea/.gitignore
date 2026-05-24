@@ -1,14 +1,15 @@
-# bonepeople 20260325
-.name
+# bonepeople 20260524
 /caches
 /libraries
 /shelf
+AndroidProjectSystem.xml
 assetWizardSettings.xml
 compiler.xml
 deploymentTargetDropDown.xml
 deploymentTargetSelector.xml
 gradle.xml
 kotlinc.xml
+markdown.xml
 migrations.xml
 misc.xml
 modules.xml
