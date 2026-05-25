@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import com.bonepeople.android.starvault.global.util.LogUtil
 import com.bonepeople.android.widget.util.AppToast
 
 class HomeFragment : Fragment() {
@@ -47,12 +48,14 @@ class HomeFragment : Fragment() {
                 Text(text = "HomeFragment")
                 Button(
                     onClick = {
+                        LogUtil.test.info("点击创建")
                         AppToast.show("施工中")
                     }) {
                     Text(text = "创建")
                 }
                 Button(
                     onClick = {
+                        LogUtil.test.info("点击打开")
                         AppToast.show("施工中")
                     }) {
                     Text(text = "打开")
