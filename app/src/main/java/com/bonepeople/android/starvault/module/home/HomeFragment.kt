@@ -4,38 +4,58 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class HomeFragment : Fragment() {
-    private val viewModel: HomeViewModel by viewModels()
+    private val viewModel: HomePageModel by viewModels()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { ComposeContent() }
         }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        (view as ComposeView).setContent {
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle(
+                lifecycle = viewLifecycleOwner.lifecycle,
+            )
+            ComposeContent(uiState = uiState, action = viewModel::dispatch)
+        }
+        viewModel.init()
     }
 
     @Preview(showSystemUi = true)
     @Composable
-    private fun ComposeContent() {
+    private fun ComposeContent(uiState: HomeState = HomeState(), action: (HomeUserAction) -> Unit = {}) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -47,11 +67,36 @@ class HomeFragment : Fragment() {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(text = "HomeFragment")
-                Button(onClick = viewModel::createVault) {
+                Button(onClick = { action(HomeUserAction.ClickCreate) }) {
                     Text(text = "创建")
                 }
-                Button(onClick = viewModel::openVault) {
+                Button(onClick = { action(HomeUserAction.ClickOpen) }) {
                     Text(text = "打开")
+                }
+            }
+            if (uiState.loading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.32f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = Color(0xE6222222),
+                                shape = RoundedCornerShape(12.dp),
+                            )
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
