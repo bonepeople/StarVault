@@ -21,10 +21,11 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
-import com.bonepeople.android.starvault.global.util.LogUtil
-import com.bonepeople.android.widget.util.AppToast
+import androidx.fragment.app.viewModels
 
 class HomeFragment : Fragment() {
+    private val viewModel: HomeViewModel by viewModels()
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -46,18 +47,10 @@ class HomeFragment : Fragment() {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(text = "HomeFragment")
-                Button(
-                    onClick = {
-                        LogUtil.test.info("点击创建")
-                        AppToast.show("施工中")
-                    }) {
+                Button(onClick = viewModel::createVault) {
                     Text(text = "创建")
                 }
-                Button(
-                    onClick = {
-                        LogUtil.test.info("点击打开")
-                        AppToast.show("施工中")
-                    }) {
+                Button(onClick = viewModel::openVault) {
                     Text(text = "打开")
                 }
             }
