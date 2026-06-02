@@ -45,9 +45,7 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         (view as ComposeView).setContent {
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle(
-                lifecycle = viewLifecycleOwner.lifecycle,
-            )
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle(viewLifecycleOwner.lifecycle)
             ComposeContent(uiState = uiState, action = viewModel::dispatch)
         }
         viewModel.init()

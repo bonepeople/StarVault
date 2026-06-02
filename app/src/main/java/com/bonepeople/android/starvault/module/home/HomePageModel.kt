@@ -2,8 +2,11 @@ package com.bonepeople.android.starvault.module.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
+import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.util.LogUtil
+import com.bonepeople.android.starvault.module.record.list.RecordListFragment
 import com.bonepeople.android.widget.util.AppToast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,9 +41,9 @@ class HomePageModel : ViewModel() {
     fun openVault() {
         viewModelScope.launchOnDefault {
             uiState.update { it.copy(loading = true) }
+            VaultManager.generateFakeVault()
             delay(500)
-            LogUtil.test.info("点击打开")
-            AppToast.show("施工中")
+            StandardActivity.open(RecordListFragment())
             uiState.update { it.copy(loading = false) }
         }
     }
