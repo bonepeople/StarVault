@@ -2,8 +2,10 @@ package com.bonepeople.android.starvault.module.record.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
+import com.bonepeople.android.starvault.module.record.detail.RecordDetailFragment
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -38,6 +40,6 @@ class RecordListPageModel : ViewModel() {
     }
 
     private fun onRecordClicked(recordId: String) {
-        // TODO: 打开记录详情
+        StandardActivity.open(RecordDetailFragment.newInstance(recordId))
     }
 }

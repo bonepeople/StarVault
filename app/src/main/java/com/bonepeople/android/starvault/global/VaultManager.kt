@@ -9,6 +9,10 @@ import java.util.UUID
 object VaultManager {
     var currentVault = VaultInfo()
 
+    fun findRecordById(recordId: String): VaultRecordInfo? {
+        return currentVault.recordList.find { it.id == recordId }
+    }
+
     fun generateFakeVault() {
         currentVault = VaultInfo(
             id = UUID.randomUUID().toString(),
