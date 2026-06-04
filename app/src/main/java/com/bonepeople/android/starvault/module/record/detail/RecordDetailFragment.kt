@@ -124,7 +124,7 @@ class RecordDetailFragment : Fragment() {
                         contentPadding = PaddingValues(vertical = 8.dp),
                     ) {
                         item(key = "HEADER") {
-                            RecordDetailHeader(
+                            Header(
                                 title = uiState.title,
                                 tags = uiState.tags,
                             )
@@ -138,7 +138,7 @@ class RecordDetailFragment : Fragment() {
                             key = { it.id },
                             contentType = { "CONTENT_TYPE_FIELD_ITEM" },
                         ) { field ->
-                            RecordDetailFieldRow(
+                            FieldRow(
                                 field = field,
                                 onToggleHistory = {
                                     action(RecordDetailUserAction.ToggleFieldHistory(field.id))
@@ -155,6 +155,141 @@ class RecordDetailFragment : Fragment() {
         }
     }
 
+    @Composable
+    private fun Header(
+        title: String,
+        tags: List<String>,
+        modifier: Modifier = Modifier,
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = title.ifEmpty { "未命名" },
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            TagsRow(tags = tags)
+        }
+    }
+
+    @OptIn(ExperimentalLayoutApi::class)
+    @Composable
+    private fun TagsRow(tags: List<String>) {
+        if (tags.isEmpty()) {
+            Text(
+                text = "无标签",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+            )
+            return
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            tags.forEach { tag ->
+                TagChip(text = tag)
+            }
+        }
+    }
+
+    @Composable
+    private fun TagChip(text: String) {
+        Text(
+            text = text,
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+                    shape = RoundedCornerShape(6.dp),
+                )
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+
+    @Composable
+    private fun FieldRow(
+        field: RecordDetailState.Field,
+        onToggleHistory: () -> Unit,
+        modifier: Modifier = Modifier,
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = field.name,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = field.currentValue.ifEmpty { "—" },
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (field.history.isNotEmpty()) {
+                Text(
+                    text = if (field.historyExpanded) {
+                        "收起历史（${field.history.size}）"
+                    } else {
+                        "查看历史（${field.history.size}）"
+                    },
+                    modifier = Modifier
+                        .clickable(onClick = onToggleHistory)
+                        .padding(vertical = 2.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                if (field.historyExpanded) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                shape = RoundedCornerShape(8.dp),
+                            )
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        field.history.forEach { item ->
+                            HistoryItem(item = item)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun HistoryItem(item: RecordDetailState.Field.HistoryItem) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = item.value.ifEmpty { "—" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+            )
+            Text(
+                text = AppTime.formatTime(item.createTimestamp, "yyyy-MM-dd"),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            )
+        }
+    }
+
     companion object {
         private const val ARG_RECORD_ID = "record_id"
 
@@ -163,140 +298,5 @@ class RecordDetailFragment : Fragment() {
                 arguments = bundleOf(ARG_RECORD_ID to recordId)
             }
         }
-    }
-}
-
-@Composable
-private fun RecordDetailHeader(
-    title: String,
-    tags: List<String>,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = title.ifEmpty { "未命名" },
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        RecordDetailTagsRow(tags = tags)
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun RecordDetailTagsRow(tags: List<String>) {
-    if (tags.isEmpty()) {
-        Text(
-            text = "无标签",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-        )
-        return
-    }
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        tags.forEach { tag ->
-            RecordDetailTagChip(text = tag)
-        }
-    }
-}
-
-@Composable
-private fun RecordDetailTagChip(text: String) {
-    Text(
-        text = text,
-        modifier = Modifier
-            .background(
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
-                shape = RoundedCornerShape(6.dp),
-            )
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSecondaryContainer,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-    )
-}
-
-@Composable
-private fun RecordDetailFieldRow(
-    field: RecordDetailState.Field,
-    onToggleHistory: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(
-            text = field.name,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = field.currentValue.ifEmpty { "—" },
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        if (field.history.isNotEmpty()) {
-            Text(
-                text = if (field.historyExpanded) {
-                    "收起历史（${field.history.size}）"
-                } else {
-                    "查看历史（${field.history.size}）"
-                },
-                modifier = Modifier
-                    .clickable(onClick = onToggleHistory)
-                    .padding(vertical = 2.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            if (field.historyExpanded) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                            shape = RoundedCornerShape(8.dp),
-                        )
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    field.history.forEach { item ->
-                        RecordDetailHistoryItem(item = item)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecordDetailHistoryItem(item: RecordDetailState.Field.HistoryItem) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(
-            text = item.value.ifEmpty { "—" },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-        )
-        Text(
-            text = AppTime.formatTime(item.createTimestamp, "yyyy-MM-dd"),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-        )
     }
 }

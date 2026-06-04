@@ -106,7 +106,7 @@ class RecordListFragment : Fragment() {
                             key = { it.id },
                             contentType = { "CONTENT_TYPE_RECORD_ITEM" },
                         ) { item ->
-                            RecordListItemRow(
+                            ItemRow(
                                 item = item,
                                 onClick = { action(RecordListUserAction.ClickItem(item.id)) },
                             )
@@ -120,66 +120,66 @@ class RecordListFragment : Fragment() {
             }
         }
     }
-}
 
-@Composable
-private fun RecordListItemRow(
-    item: RecordListState.Item,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+    @Composable
+    private fun ItemRow(
+        item: RecordListState.Item,
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
     ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = item.title.ifEmpty { "未命名" },
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            TagsRow(tags = item.tags)
+        }
+    }
+
+    @OptIn(ExperimentalLayoutApi::class)
+    @Composable
+    private fun TagsRow(tags: List<String>) {
+        if (tags.isEmpty()) {
+            Text(
+                text = "无标签",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+            )
+            return
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            tags.forEach { tag ->
+                TagChip(text = tag)
+            }
+        }
+    }
+
+    @Composable
+    private fun TagChip(text: String) {
         Text(
-            text = item.title.ifEmpty { "未命名" },
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            text = text,
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+                    shape = RoundedCornerShape(6.dp),
+                )
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        RecordTagsRow(tags = item.tags)
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun RecordTagsRow(tags: List<String>) {
-    if (tags.isEmpty()) {
-        Text(
-            text = "无标签",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-        )
-        return
-    }
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        tags.forEach { tag ->
-            RecordTagChip(text = tag)
-        }
-    }
-}
-
-@Composable
-private fun RecordTagChip(text: String) {
-    Text(
-        text = text,
-        modifier = Modifier
-            .background(
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
-                shape = RoundedCornerShape(6.dp),
-            )
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSecondaryContainer,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-    )
 }
