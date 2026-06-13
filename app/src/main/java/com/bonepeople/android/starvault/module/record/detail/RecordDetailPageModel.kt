@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 class RecordDetailPageModel : ViewModel() {
-    val uiState: MutableStateFlow<RecordDetailState> = MutableStateFlow(RecordDetailState())
+    val uiState: MutableStateFlow<RecordDetailState> = MutableStateFlow(RecordDetailState.Default)
     private var initialized = false
     private var recordId: String = ""
 

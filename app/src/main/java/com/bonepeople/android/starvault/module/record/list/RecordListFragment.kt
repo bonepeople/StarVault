@@ -48,16 +48,7 @@ class RecordListFragment : BaseFragment() {
 
     @Preview(showSystemUi = true)
     @Composable
-    private fun ComposeContent(
-        uiState: RecordListState = RecordListState(
-            items = listOf(
-                RecordListState.Item(id = "1", title = "GitHub", tags = listOf("开发", "工作")),
-                RecordListState.Item(id = "2", title = "Wi‑Fi 密码", tags = listOf("Home")),
-                RecordListState.Item(id = "3", title = "无标签示例", tags = emptyList()),
-            ),
-        ),
-        action: (RecordListUserAction) -> Unit = {},
-    ) {
+    private fun ComposeContent(uiState: RecordListState = RecordListState.Preview.Normal, action: (RecordListUserAction) -> Unit = {}) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

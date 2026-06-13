@@ -43,7 +43,7 @@ class HomeFragment : BaseFragment() {
 
     @Preview(showSystemUi = true)
     @Composable
-    private fun ComposeContent(uiState: HomeState = HomeState(), action: (HomeUserAction) -> Unit = {}) {
+    private fun ComposeContent(uiState: HomeState = HomeState.Preview.Normal, action: (HomeUserAction) -> Unit = {}) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

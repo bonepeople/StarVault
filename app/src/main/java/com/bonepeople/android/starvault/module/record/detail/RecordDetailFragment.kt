@@ -51,35 +51,7 @@ class RecordDetailFragment : BaseFragment() {
 
     @Preview(showSystemUi = true)
     @Composable
-    private fun ComposeContent(
-        uiState: RecordDetailState = RecordDetailState(
-            title = "GitHub",
-            tags = listOf("开发", "工作"),
-            fields = listOf(
-                RecordDetailState.Field(
-                    id = "1",
-                    name = "用户名",
-                    currentValue = "bonepeople",
-                ),
-                RecordDetailState.Field(
-                    id = "2",
-                    name = "密码",
-                    currentValue = "P@ssw0rd_2026!",
-                    history = listOf(
-                        RecordDetailState.Field.HistoryItem("TmpP@ss2025", 1_758_355_200_000L),
-                        RecordDetailState.Field.HistoryItem("OldP@ss2024", 1_717_228_800_000L),
-                    ),
-                    historyExpanded = true,
-                ),
-                RecordDetailState.Field(
-                    id = "3",
-                    name = "备注",
-                    currentValue = "主账号，绑定 YubiKey",
-                ),
-            ),
-        ),
-        action: (RecordDetailUserAction) -> Unit = {},
-    ) {
+    private fun ComposeContent(uiState: RecordDetailState = RecordDetailState.Preview.Normal, action: (RecordDetailUserAction) -> Unit = {}) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

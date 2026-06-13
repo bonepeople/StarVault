@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 class HomePageModel : ViewModel() {
-    val uiState: MutableStateFlow<HomeState> = MutableStateFlow(HomeState())
+    val uiState: MutableStateFlow<HomeState> = MutableStateFlow(HomeState.Default)
     private var initialized = false
 
     fun init() {
