@@ -1,9 +1,6 @@
 package com.bonepeople.android.starvault.module.record.detail
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,33 +26,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.widget.util.AppTime
 
-class RecordDetailFragment : Fragment() {
+class RecordDetailFragment : BaseFragment() {
     private val viewModel: RecordDetailPageModel by viewModels()
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        }
+    @Composable
+    override fun Content() {
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle(viewLifecycleOwner.lifecycle)
+        ComposeContent(uiState = uiState, action = viewModel::dispatch)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun initData(savedInstanceState: Bundle?) {
         val recordId = requireArguments().getString(ARG_RECORD_ID).orEmpty()
-        (view as ComposeView).setContent {
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle(viewLifecycleOwner.lifecycle)
-            ComposeContent(uiState = uiState, action = viewModel::dispatch)
-        }
         viewModel.init(recordId)
     }
 
