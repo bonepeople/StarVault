@@ -41,7 +41,7 @@ class HomeFragment : BaseFragment() {
         viewModel.init()
     }
 
-    override fun onBackPressed() {
+    override fun handleBackPress() {
         requireActivity().finishAndRemoveTask()
     }
 

@@ -13,9 +13,9 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 
 abstract class BaseFragment : Fragment() {
-    private val onBackListener = object : OnBackPressedCallback(true) {
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            onBackPressed()
+            handleBackPress()
         }
     }
 
@@ -33,12 +33,13 @@ abstract class BaseFragment : Fragment() {
     @CallSuper
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        requireActivity().onBackPressedDispatcher.addCallback(this, onBackListener)
+        requireActivity().onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
-    open fun onBackPressed() {
-        onBackListener.isEnabled = false
-        requireActivity().onBackPressed()
+    protected open fun handleBackPress() {
+        onBackPressedCallback.isEnabled = false
+        requireActivity().onBackPressedDispatcher.onBackPressed()
+        onBackPressedCallback.isEnabled = true
     }
 
     @Composable
