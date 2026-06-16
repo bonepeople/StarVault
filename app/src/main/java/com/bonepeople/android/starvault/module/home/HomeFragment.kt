@@ -41,6 +41,10 @@ class HomeFragment : BaseFragment() {
         viewModel.init()
     }
 
+    override fun onBackPressed() {
+        requireActivity().finishAndRemoveTask()
+    }
+
     @Preview(showSystemUi = true)
     @Composable
     private fun ComposeContent(uiState: HomeState = HomeState.Preview.Normal, action: (HomeUserAction) -> Unit = {}) {
