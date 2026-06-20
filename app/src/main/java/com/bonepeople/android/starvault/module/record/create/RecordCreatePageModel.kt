@@ -1,8 +1,13 @@
 package com.bonepeople.android.starvault.module.record.create
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
+import com.bonepeople.android.starvault.global.VaultManager
+import com.bonepeople.android.starvault.global.data.VaultRecordInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 class RecordCreatePageModel : ViewModel() {
     val uiState: MutableStateFlow<RecordCreateState> = MutableStateFlow(RecordCreateState.Default)
@@ -16,14 +21,28 @@ class RecordCreatePageModel : ViewModel() {
     }
 
     private fun onTitleUpdated(title: String) {
-        uiState.update { it.copy(title = title) }
+        uiState.update { it.copy(title = title, titleError = "") }
     }
 
     // TODO: 步骤3
     private fun onTagsClicked() {
     }
 
-    // TODO: 步骤2
     private fun onNextClicked() {
+        viewModelScope.launchOnDefault {
+            val title = uiState.value.title.trim()
+            if (title.isEmpty()) {
+                uiState.update { it.copy(titleError = "请输入名称") }
+                return@launchOnDefault
+            }
+            uiState.update { it.copy(saving = true) }
+            val record = VaultRecordInfo(
+                id = UUID.randomUUID().toString(),
+                title = title,
+                tagList = uiState.value.tags,
+                fieldList = emptyList(),
+            )
+            VaultManager.addRecord(record)
+        }
     }
 }

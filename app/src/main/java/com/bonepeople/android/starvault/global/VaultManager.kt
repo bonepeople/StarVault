@@ -13,6 +13,12 @@ object VaultManager {
         return currentVault.recordList.find { it.id == recordId }
     }
 
+    fun addRecord(record: VaultRecordInfo) {
+        currentVault = currentVault.copy(
+            recordList = currentVault.recordList + record,
+        )
+    }
+
     fun generateFakeVault() {
         currentVault = VaultInfo(
             id = UUID.randomUUID().toString(),

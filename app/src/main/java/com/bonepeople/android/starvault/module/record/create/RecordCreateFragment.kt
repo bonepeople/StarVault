@@ -60,6 +60,11 @@ class RecordCreateFragment : BaseFragment() {
                 keyboardController?.show()
             }
         }
+        LaunchedEffect(uiState.saving) {
+            if (uiState.saving) {
+                keyboardController?.hide()
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -85,10 +90,12 @@ class RecordCreateFragment : BaseFragment() {
                     } else {
                         null
                     },
+                    enabled = !uiState.saving,
                     singleLine = true,
                 )
                 TagSection(
                     tags = uiState.tags,
+                    enabled = !uiState.saving,
                     onClick = { action(RecordCreateUserAction.ClickTags) },
                 )
             }
@@ -108,13 +115,14 @@ class RecordCreateFragment : BaseFragment() {
     @Composable
     private fun TagSection(
         tags: List<String>,
+        enabled: Boolean,
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
     ) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .clickable(enabled = enabled, onClick = onClick)
                 .padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
