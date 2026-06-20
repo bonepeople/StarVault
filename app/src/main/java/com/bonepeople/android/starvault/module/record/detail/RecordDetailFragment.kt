@@ -6,8 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +31,7 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.ui.component.RecordTag
 import com.bonepeople.android.widget.util.AppTime
 
 class RecordDetailFragment : BaseFragment() {
@@ -89,6 +88,7 @@ class RecordDetailFragment : BaseFragment() {
                             Header(
                                 title = uiState.title,
                                 tags = uiState.tags,
+                                onEditTags = { action(RecordDetailUserAction.ClickTags) },
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -121,6 +121,7 @@ class RecordDetailFragment : BaseFragment() {
     private fun Header(
         title: String,
         tags: List<String>,
+        onEditTags: () -> Unit,
         modifier: Modifier = Modifier,
     ) {
         Column(
@@ -136,46 +137,8 @@ class RecordDetailFragment : BaseFragment() {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            TagsRow(tags = tags)
+            RecordTag.TagSection(tags = tags, editable = true, onEdit = onEditTags)
         }
-    }
-
-    @OptIn(ExperimentalLayoutApi::class)
-    @Composable
-    private fun TagsRow(tags: List<String>) {
-        if (tags.isEmpty()) {
-            Text(
-                text = "无标签",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-            )
-            return
-        }
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            tags.forEach { tag ->
-                TagChip(text = tag)
-            }
-        }
-    }
-
-    @Composable
-    private fun TagChip(text: String) {
-        Text(
-            text = text,
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
-                    shape = RoundedCornerShape(6.dp),
-                )
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 
     @Composable

@@ -21,8 +21,13 @@ class RecordDetailPageModel : ViewModel() {
 
     fun dispatch(action: RecordDetailUserAction) {
         when (action) {
+            RecordDetailUserAction.ClickTags -> onTagsClicked()
             is RecordDetailUserAction.ToggleFieldHistory -> toggleFieldHistory(action.fieldId)
         }
+    }
+
+    private fun onTagsClicked() {
+
     }
 
     private fun loadRecord() {

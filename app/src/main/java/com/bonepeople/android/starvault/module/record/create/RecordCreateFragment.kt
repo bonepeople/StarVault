@@ -3,19 +3,15 @@ package com.bonepeople.android.starvault.module.record.create
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -29,7 +25,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.viewModels
@@ -38,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.ui.component.RecordTag
 import com.bonepeople.android.starvault.module.record.detail.RecordDetailFragment
 
 class RecordCreateFragment : BaseFragment() {
@@ -73,7 +69,7 @@ class RecordCreateFragment : BaseFragment() {
     @Preview(showSystemUi = true)
     @Composable
     private fun ComposeContent(
-        uiState: RecordCreateState = RecordCreateState.Preview.Normal,
+        uiState: RecordCreateState = RecordCreateState.Preview.Empty,
         action: (RecordCreateUserAction) -> Unit = {},
     ) {
         val focusRequester = remember { FocusRequester() }
@@ -100,7 +96,6 @@ class RecordCreateFragment : BaseFragment() {
                     .weight(1f)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 OutlinedTextField(
                     value = uiState.title,
@@ -118,10 +113,17 @@ class RecordCreateFragment : BaseFragment() {
                     enabled = !uiState.saving,
                     singleLine = true,
                 )
-                TagSection(
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "标签",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                RecordTag.TagSection(
                     tags = uiState.tags,
-                    enabled = !uiState.saving,
-                    onClick = { action(RecordCreateUserAction.ClickTags) },
+                    editable = !uiState.saving,
+                    onEdit = { action(RecordCreateUserAction.ClickTags) },
                 )
             }
             Button(
@@ -134,62 +136,6 @@ class RecordCreateFragment : BaseFragment() {
                 Text(text = "下一步")
             }
         }
-    }
-
-    @OptIn(ExperimentalLayoutApi::class)
-    @Composable
-    private fun TagSection(
-        tags: List<String>,
-        enabled: Boolean,
-        onClick: () -> Unit,
-        modifier: Modifier = Modifier,
-    ) {
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .clickable(enabled = enabled, onClick = onClick)
-                .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = "标签",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (tags.isEmpty()) {
-                Text(
-                    text = "点击添加标签",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            } else {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    tags.forEach { tag ->
-                        TagChip(text = tag)
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun TagChip(text: String) {
-        Text(
-            text = text,
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
-                    shape = RoundedCornerShape(6.dp),
-                )
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 
     companion object {
