@@ -1,22 +1,36 @@
 package com.bonepeople.android.starvault.module.record.detail
 
+import com.google.gson.annotations.SerializedName
+
 data class RecordDetailState(
+    @SerializedName("loading")
     val loading: Boolean = false,
+    @SerializedName("notFound")
     val notFound: Boolean = false,
+    @SerializedName("title")
     val title: String = "",
+    @SerializedName("tags")
     val tags: List<String> = emptyList(),
+    @SerializedName("fields")
     val fields: List<Field> = emptyList(),
 ) {
     data class Field(
-        val id: String,
-        val name: String,
-        val currentValue: String,
+        @SerializedName("id")
+        val id: String = "",
+        @SerializedName("name")
+        val name: String = "",
+        @SerializedName("currentValue")
+        val currentValue: String = "",
+        @SerializedName("historyExpanded")
         val historyExpanded: Boolean = false,
+        @SerializedName("history")
         val history: List<HistoryItem> = emptyList(),
     ) {
         data class HistoryItem(
-            val value: String,
-            val createTimestamp: Long,
+            @SerializedName("value")
+            val value: String = "",
+            @SerializedName("createTimestamp")
+            val createTimestamp: Long = 0L,
         )
     }
 

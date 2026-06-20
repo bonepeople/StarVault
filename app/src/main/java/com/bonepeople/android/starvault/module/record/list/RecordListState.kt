@@ -1,13 +1,20 @@
 package com.bonepeople.android.starvault.module.record.list
 
+import com.google.gson.annotations.SerializedName
+
 data class RecordListState(
+    @SerializedName("loading")
     val loading: Boolean = false,
+    @SerializedName("items")
     val items: List<Item> = emptyList(),
 ) {
     data class Item(
-        val id: String,
-        val title: String,
-        val tags: List<String>,
+        @SerializedName("id")
+        val id: String = "",
+        @SerializedName("title")
+        val title: String = "",
+        @SerializedName("tags")
+        val tags: List<String> = emptyList(),
     )
 
     @Suppress("unused")

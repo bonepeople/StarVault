@@ -1,6 +1,9 @@
 package com.bonepeople.android.starvault.module.home
 
+import com.google.gson.annotations.SerializedName
+
 data class HomeState(
+    @SerializedName("loading")
     val loading: Boolean = false,
 ) {
     @Suppress("unused")
