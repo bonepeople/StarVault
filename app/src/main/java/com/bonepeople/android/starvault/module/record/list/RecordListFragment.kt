@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -97,6 +98,16 @@ class RecordListFragment : BaseFragment() {
                             )
                         }
                     }
+                }
+            }
+            if (!uiState.loading) {
+                Button(
+                    onClick = { action(RecordListUserAction.ClickCreate) },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp),
+                ) {
+                    Text(text = "新建")
                 }
             }
         }
