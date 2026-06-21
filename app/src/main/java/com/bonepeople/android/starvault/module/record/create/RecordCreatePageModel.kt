@@ -20,6 +20,7 @@ class RecordCreatePageModel : ViewModel() {
         when (action) {
             is RecordCreateUserAction.UpdateTitle -> onTitleUpdated(action.title)
             RecordCreateUserAction.ClickTags -> onTagsClicked()
+            is RecordCreateUserAction.TagsUpdated -> onTagsUpdated(action.tags)
             RecordCreateUserAction.ClickNext -> onNextClicked()
         }
     }
@@ -28,8 +29,14 @@ class RecordCreatePageModel : ViewModel() {
         uiState.update { it.copy(title = title, titleError = "") }
     }
 
-    // TODO: 步骤3
     private fun onTagsClicked() {
+        viewModelScope.launchOnDefault {
+            _effect.send(RecordCreateEffect.OpenTagsEdit(uiState.value.tags))
+        }
+    }
+
+    private fun onTagsUpdated(tags: List<String>) {
+        uiState.update { it.copy(tags = tags) }
     }
 
     private fun onNextClicked() {

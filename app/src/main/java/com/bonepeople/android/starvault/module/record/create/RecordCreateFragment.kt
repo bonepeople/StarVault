@@ -35,6 +35,7 @@ import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.ui.component.RecordTag
 import com.bonepeople.android.starvault.module.record.detail.RecordDetailFragment
+import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
 
 class RecordCreateFragment : BaseFragment() {
     private val viewModel: RecordCreatePageModel by viewModels()
@@ -52,7 +53,15 @@ class RecordCreateFragment : BaseFragment() {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) {
             when (it) {
                 is RecordCreateEffect.OpenDetail -> openDetail(it.recordId)
+                is RecordCreateEffect.OpenTagsEdit -> openTagsEdit(it.tags)
             }
+        }
+    }
+
+    private fun openTagsEdit(tags: List<String>) {
+        StandardActivity.call(TagsEditFragment.newInstance(tags)).onSuccess { intent ->
+            val resultTags = intent?.getStringArrayListExtra(TagsEditFragment.EXTRA_TAGS) ?: return@onSuccess
+            viewModel.dispatch(RecordCreateUserAction.TagsUpdated(resultTags))
         }
     }
 

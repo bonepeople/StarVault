@@ -19,6 +19,14 @@ object VaultManager {
         )
     }
 
+    fun updateRecordTags(recordId: String, tagList: List<String>) {
+        currentVault = currentVault.copy(
+            recordList = currentVault.recordList.map { record ->
+                if (record.id == recordId) record.copy(tagList = tagList) else record
+            },
+        )
+    }
+
     fun generateFakeVault() {
         currentVault = VaultInfo(
             id = UUID.randomUUID().toString(),

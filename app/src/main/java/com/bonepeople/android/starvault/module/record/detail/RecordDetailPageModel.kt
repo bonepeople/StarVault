@@ -4,11 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
 class RecordDetailPageModel : ViewModel() {
     val uiState: MutableStateFlow<RecordDetailState> = MutableStateFlow(RecordDetailState.Default)
+    private val _effect = Channel<RecordDetailEffect>(capacity = Channel.UNLIMITED)
+    val effect = _effect.receiveAsFlow()
     private var initialized = false
     private var recordId: String = ""
 
@@ -22,12 +26,20 @@ class RecordDetailPageModel : ViewModel() {
     fun dispatch(action: RecordDetailUserAction) {
         when (action) {
             RecordDetailUserAction.ClickTags -> onTagsClicked()
+            is RecordDetailUserAction.TagsUpdated -> onTagsUpdated(action.tags)
             is RecordDetailUserAction.ToggleFieldHistory -> toggleFieldHistory(action.fieldId)
         }
     }
 
     private fun onTagsClicked() {
+        viewModelScope.launchOnDefault {
+            _effect.send(RecordDetailEffect.OpenTagsEdit(uiState.value.tags))
+        }
+    }
 
+    private fun onTagsUpdated(tags: List<String>) {
+        uiState.update { it.copy(tags = tags) }
+        VaultManager.updateRecordTags(recordId, tags)
     }
 
     private fun loadRecord() {
