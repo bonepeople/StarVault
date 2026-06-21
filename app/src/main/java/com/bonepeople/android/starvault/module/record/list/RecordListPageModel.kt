@@ -42,7 +42,9 @@ class RecordListPageModel : ViewModel() {
     }
 
     private fun onCreateClicked() {
-        StandardActivity.open(RecordCreateFragment())
+        StandardActivity.call(RecordCreateFragment()).onSuccess {
+            loadRecords()
+        }
     }
 
     private fun onRecordClicked(recordId: String) {

@@ -1,5 +1,8 @@
 package com.bonepeople.android.starvault.module.record.create
 
+import android.app.Activity
+import android.content.Intent
+import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,8 +32,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bonepeople.android.base.activity.StandardActivity
+import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.module.record.detail.RecordDetailFragment
 
 class RecordCreateFragment : BaseFragment() {
     private val viewModel: RecordCreatePageModel by viewModels()
@@ -43,6 +50,24 @@ class RecordCreateFragment : BaseFragment() {
             action = viewModel::dispatch,
             requestInitialFocus = true,
         )
+    }
+
+    override fun initData(savedInstanceState: Bundle?) {
+        viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) {
+            when (it) {
+                is RecordCreateEffect.OpenDetail -> openDetail(it.recordId)
+            }
+        }
+    }
+
+    private fun openDetail(recordId: String) {
+        StandardActivity.call(RecordDetailFragment.newInstance(recordId)).onResult {
+            requireActivity().setResult(
+                Activity.RESULT_OK,
+                Intent().putExtra(EXTRA_RECORD_ID, recordId),
+            )
+            requireActivity().finishAfterTransition()
+        }
     }
 
     @Preview(showSystemUi = true)
@@ -165,5 +190,9 @@ class RecordCreateFragment : BaseFragment() {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+
+    companion object {
+        const val EXTRA_RECORD_ID = "recordId"
     }
 }

@@ -5,12 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.data.VaultRecordInfo
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import java.util.UUID
 
 class RecordCreatePageModel : ViewModel() {
     val uiState: MutableStateFlow<RecordCreateState> = MutableStateFlow(RecordCreateState.Default)
+    private val _effect = Channel<RecordCreateEffect>(capacity = Channel.UNLIMITED)
+    val effect = _effect.receiveAsFlow()
 
     fun dispatch(action: RecordCreateUserAction) {
         when (action) {
@@ -43,6 +47,7 @@ class RecordCreatePageModel : ViewModel() {
                 fieldList = emptyList(),
             )
             VaultManager.addRecord(record)
+            _effect.send(RecordCreateEffect.OpenDetail(record.id))
         }
     }
 }
