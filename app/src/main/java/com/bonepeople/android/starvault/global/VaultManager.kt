@@ -8,27 +8,30 @@ import java.util.UUID
 
 object VaultManager {
     var currentVault = VaultInfo()
+        private set
+    var recommendedTagList: List<String> = emptyList()
+        private set
 
     fun findRecordById(recordId: String): VaultRecordInfo? {
         return currentVault.recordList.find { it.id == recordId }
     }
 
     fun addRecord(record: VaultRecordInfo) {
-        currentVault = currentVault.copy(
-            recordList = currentVault.recordList + record,
-        )
+        updateVault(currentVault.copy(recordList = currentVault.recordList + record))
     }
 
     fun updateRecordTags(recordId: String, tagList: List<String>) {
-        currentVault = currentVault.copy(
-            recordList = currentVault.recordList.map { record ->
-                if (record.id == recordId) record.copy(tagList = tagList) else record
-            },
+        updateVault(
+            currentVault.copy(
+                recordList = currentVault.recordList.map { record ->
+                    if (record.id == recordId) record.copy(tagList = tagList) else record
+                },
+            ),
         )
     }
 
     fun generateFakeVault() {
-        currentVault = VaultInfo(
+        updateVault(VaultInfo(
             id = UUID.randomUUID().toString(),
             name = "演示保险库",
             description = "用于 UI 与逻辑测试的示例数据",
@@ -199,6 +202,21 @@ object VaultManager {
                     ),
                 ),
             ),
-        )
+        ))
+    }
+
+    private fun updateVault(vault: VaultInfo) {
+        currentVault = vault
+        refreshRecommendedTags()
+    }
+
+    private fun refreshRecommendedTags() {
+        recommendedTagList = currentVault.recordList
+            .flatMap { it.tagList }
+            .groupingBy { it }
+            .eachCount()
+            .entries
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            .map { it.key }
     }
 }

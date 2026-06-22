@@ -3,6 +3,7 @@ package com.bonepeople.android.starvault.module.record.tags.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
+import com.bonepeople.android.starvault.global.VaultManager
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -17,7 +18,7 @@ class TagsEditPageModel : ViewModel() {
     fun init(tags: List<String>) {
         if (initialized) return
         initialized = true
-        uiState.update { it.copy(tags = tags) }
+        uiState.update { it.copy(tags = tags).withUpdatedRecommendations() }
     }
 
     fun dispatch(action: TagsEditUserAction) {
@@ -29,6 +30,7 @@ class TagsEditPageModel : ViewModel() {
             is TagsEditUserAction.ClickDelete -> onDelete(action.tag)
             TagsEditUserAction.UndoDelete -> onUndoDelete()
             TagsEditUserAction.ClickBack -> onBackPressed()
+            is TagsEditUserAction.ClickRecommendTag -> onRecommendTag(action.tag)
         }
     }
 
@@ -79,13 +81,24 @@ class TagsEditPageModel : ViewModel() {
             uiState.update { it.copy(inputError = "标签已存在") }
             return
         }
+        addTag(tag)
+    }
+
+    private fun onRecommendTag(tag: String) {
+        if (tag in uiState.value.tags) {
+            return
+        }
+        addTag(tag)
+    }
+
+    private fun addTag(tag: String) {
         uiState.update {
             it.copy(
                 tags = it.tags + tag,
                 addDialogVisible = false,
                 inputText = "",
                 inputError = "",
-            )
+            ).withUpdatedRecommendations()
         }
     }
 
@@ -98,7 +111,7 @@ class TagsEditPageModel : ViewModel() {
             it.copy(
                 tags = it.tags.filterIndexed { i, _ -> i != index },
                 pendingUndo = PendingUndoInfo(tag = tag, index = index),
-            )
+            ).withUpdatedRecommendations()
         }
     }
 
@@ -108,7 +121,11 @@ class TagsEditPageModel : ViewModel() {
             val newTags = state.tags.filter { it != undo.tag }.toMutableList()
             val insertIndex = undo.index.coerceIn(0, newTags.size)
             newTags.add(insertIndex, undo.tag)
-            state.copy(tags = newTags, pendingUndo = null)
+            state.copy(tags = newTags, pendingUndo = null).withUpdatedRecommendations()
         }
+    }
+
+    private fun TagsEditState.withUpdatedRecommendations(): TagsEditState {
+        return copy(recommendedTags = VaultManager.recommendedTagList.filter { it !in tags })
     }
 }

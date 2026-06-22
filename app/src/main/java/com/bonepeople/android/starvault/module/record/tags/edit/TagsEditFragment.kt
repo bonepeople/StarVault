@@ -139,6 +139,13 @@ class TagsEditFragment : BaseFragment() {
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
+                Spacer(Modifier.weight(1f))
+                if (uiState.recommendedTags.isNotEmpty()) {
+                    RecommendedTagSection(
+                        tags = uiState.recommendedTags,
+                        onSelect = { action(TagsEditUserAction.ClickRecommendTag(it)) },
+                    )
+                }
             }
             SnackbarHost(
                 hostState = snackbarHostState,
@@ -222,6 +229,59 @@ class TagsEditFragment : BaseFragment() {
                 )
             }
         }
+    }
+
+    @OptIn(ExperimentalLayoutApi::class)
+    @Composable
+    private fun RecommendedTagSection(
+        tags: List<String>,
+        onSelect: (String) -> Unit,
+        modifier: Modifier = Modifier,
+    ) {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "推荐标签",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                tags.forEach { tag ->
+                    SelectableTagChip(
+                        text = tag,
+                        onClick = { onSelect(tag) },
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun SelectableTagChip(
+        text: String,
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+    ) {
+        Text(
+            text = text,
+            modifier = modifier
+                .clickable(onClick = onClick)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    shape = RoundedCornerShape(6.dp),
+                )
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 
     @Composable
