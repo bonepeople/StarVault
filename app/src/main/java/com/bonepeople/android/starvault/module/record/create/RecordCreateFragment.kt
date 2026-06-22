@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,7 +49,6 @@ class RecordCreateFragment : BaseFragment() {
         ComposeContent(
             uiState = uiState,
             action = viewModel::dispatch,
-            requestInitialFocus = true,
         )
     }
 
@@ -75,12 +75,12 @@ class RecordCreateFragment : BaseFragment() {
     private fun ComposeContent(
         uiState: RecordCreateState = RecordCreateState.Preview.Normal,
         action: (RecordCreateUserAction) -> Unit = {},
-        requestInitialFocus: Boolean = false,
     ) {
         val focusRequester = remember { FocusRequester() }
         val keyboardController = LocalSoftwareKeyboardController.current
-        LaunchedEffect(requestInitialFocus) {
-            if (requestInitialFocus) {
+        val isPreview = LocalInspectionMode.current
+        if (!isPreview) {
+            LaunchedEffect(Unit) {
                 focusRequester.requestFocus()
                 keyboardController?.show()
             }
