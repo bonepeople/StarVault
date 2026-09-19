@@ -29,9 +29,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bonepeople.android.base.activity.StandardActivity
+import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.ui.component.RecordTag
+import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
 import com.bonepeople.android.widget.util.AppTime
 
 class RecordDetailFragment : BaseFragment() {
@@ -44,8 +48,20 @@ class RecordDetailFragment : BaseFragment() {
     }
 
     override fun initData(savedInstanceState: Bundle?) {
+        viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
+            when (effect) {
+                is RecordDetailEffect.OpenTagsEdit -> openTagsEdit(effect.tags)
+            }
+        }
         val recordId = requireArguments().getString(ARG_RECORD_ID).orEmpty()
         viewModel.init(recordId)
+    }
+
+    private fun openTagsEdit(tags: List<String>) {
+        StandardActivity.call(TagsEditFragment.newInstance(tags)).onSuccess { intent ->
+            val resultTags = intent?.getStringArrayListExtra(TagsEditFragment.EXTRA_TAGS) ?: return@onSuccess
+            viewModel.dispatch(RecordDetailUserAction.TagsUpdated(resultTags))
+        }
     }
 
     @Preview(showSystemUi = true)
