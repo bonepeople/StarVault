@@ -13,11 +13,14 @@ data class TagsEditState(
     val inputError: String = "",
     @SerializedName("pendingUndo")
     val pendingUndo: PendingUndoInfo? = null,
+    @SerializedName("recommendedTags")
+    val recommendedTags: List<String> = emptyList(),
 ) {
     @Suppress("unused")
     object Preview {
         val Normal = TagsEditState(
             tags = listOf("开发", "工作"),
+            recommendedTags = listOf("家庭", "网络"),
         )
 
         val Empty = TagsEditState()

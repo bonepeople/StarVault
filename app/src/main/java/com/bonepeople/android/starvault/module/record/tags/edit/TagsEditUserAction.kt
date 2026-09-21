@@ -15,4 +15,6 @@ sealed interface TagsEditUserAction {
     object UndoDelete : TagsEditUserAction
     // 用户按返回键
     object ClickBack : TagsEditUserAction
+    // 用户点击推荐标签
+    data class ClickRecommendTag(val tag: String) : TagsEditUserAction
 }
