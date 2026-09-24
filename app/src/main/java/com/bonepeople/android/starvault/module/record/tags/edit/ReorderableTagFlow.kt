@@ -66,6 +66,8 @@ object ReorderableTagFlow {
         var draggingTag by remember { mutableStateOf<String?>(null) }
         // 被拖动标签左上角在容器坐标系中的实时位置
         var fingerOffset by remember { mutableStateOf(Offset.Zero) }
+        // 手指触点在容器坐标系中的实时位置，用于判断目标标签
+        var pointerPosition by remember { mutableStateOf(Offset.Zero) }
         // 被拖动标签的缩放比例，长按时立即放大，归位时随位置同步恢复
         var draggingScale by remember { mutableStateOf(1f) }
         // 每个标签在流式布局中的稳定槽位矩形，用于拖动时的命中判断
@@ -136,26 +138,24 @@ object ReorderableTagFlow {
                             )
                             .pointerInput(tag) {
                                 detectDragGesturesAfterLongPress(
-                                    onDragStart = {
+                                    onDragStart = { touchOffset ->
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        fingerOffset = slotRects[tag]?.topLeft ?: slot
+                                        val tagPosition = slotRects[tag]?.topLeft ?: slot
+                                        fingerOffset = tagPosition
+                                        pointerPosition = tagPosition + touchOffset
                                         draggingScale = 1.05f
                                         draggingTag = tag
                                     },
                                     onDrag = { change, dragAmount ->
                                         change.consume()
                                         fingerOffset += dragAmount
+                                        pointerPosition += dragAmount
                                         val dragged = draggingTag
-                                        val draggedRect = if (dragged != null) slotRects[dragged] else null
-                                        if (dragged != null && draggedRect != null) {
-                                            val center = Offset(
-                                                x = fingerOffset.x + draggedRect.width / 2f,
-                                                y = fingerOffset.y + draggedRect.height / 2f,
-                                            )
+                                        if (dragged != null) {
                                             val current = latestTags
                                             val from = current.indexOf(dragged)
                                             val to = current.indexOfFirst { candidate ->
-                                                candidate != dragged && slotRects[candidate]?.contains(center) == true
+                                                candidate != dragged && slotRects[candidate]?.contains(pointerPosition) == true
                                             }
                                             if (from >= 0 && to >= 0 && to != from) {
                                                 latestOnMove(from, to)
