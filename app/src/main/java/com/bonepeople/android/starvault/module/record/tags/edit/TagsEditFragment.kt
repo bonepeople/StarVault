@@ -118,6 +118,7 @@ class TagsEditFragment : BaseFragment() {
                 TagList(
                     tags = uiState.tags,
                     onDelete = { action(TagsEditUserAction.ClickDelete(it)) },
+                    onMove = { from, to -> action(TagsEditUserAction.MoveTag(from, to)) },
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(
@@ -163,11 +164,11 @@ class TagsEditFragment : BaseFragment() {
         }
     }
 
-    @OptIn(ExperimentalLayoutApi::class)
     @Composable
     private fun TagList(
         tags: List<String>,
         onDelete: (String) -> Unit,
+        onMove: (from: Int, to: Int) -> Unit,
         modifier: Modifier = Modifier,
     ) {
         if (tags.isEmpty()) {
@@ -178,17 +179,15 @@ class TagsEditFragment : BaseFragment() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
             )
         } else {
-            FlowRow(
+            ReorderableTagFlow.Content(
+                tags = tags,
+                onMove = onMove,
                 modifier = modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                tags.forEach { tag ->
-                    DeletableTagChip(
-                        text = tag,
-                        onDelete = { onDelete(tag) },
-                    )
-                }
+            ) { tag ->
+                DeletableTagChip(
+                    text = tag,
+                    onDelete = { onDelete(tag) },
+                )
             }
         }
     }

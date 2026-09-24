@@ -11,6 +11,8 @@ sealed interface TagsEditUserAction {
     object ClickConfirmAdd : TagsEditUserAction
     // 用户点击标签删除按钮
     data class ClickDelete(val tag: String) : TagsEditUserAction
+    // 用户拖动标签调整顺序，将 from 位置的标签移动到 to 位置
+    data class MoveTag(val from: Int, val to: Int) : TagsEditUserAction
     // 用户点击 Snackbar「撤回」
     object UndoDelete : TagsEditUserAction
     // 用户按返回键

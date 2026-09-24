@@ -28,6 +28,7 @@ class TagsEditPageModel : ViewModel() {
             is TagsEditUserAction.UpdateInput -> onInputUpdated(action.text)
             TagsEditUserAction.ClickConfirmAdd -> onConfirmAdd()
             is TagsEditUserAction.ClickDelete -> onDelete(action.tag)
+            is TagsEditUserAction.MoveTag -> onMoveTag(action.from, action.to)
             TagsEditUserAction.UndoDelete -> onUndoDelete()
             TagsEditUserAction.ClickBack -> onBackPressed()
             is TagsEditUserAction.ClickRecommendTag -> onRecommendTag(action.tag)
@@ -112,6 +113,17 @@ class TagsEditPageModel : ViewModel() {
                 tags = it.tags.filterIndexed { i, _ -> i != index },
                 pendingUndo = PendingUndoInfo(tag = tag, index = index),
             ).withUpdatedRecommendations()
+        }
+    }
+
+    private fun onMoveTag(from: Int, to: Int) {
+        uiState.update { state ->
+            val tags = state.tags
+            if (from !in tags.indices || to !in tags.indices || from == to) {
+                return@update state
+            }
+            val newTags = tags.toMutableList().apply { add(to, removeAt(from)) }
+            state.copy(tags = newTags)
         }
     }
 
