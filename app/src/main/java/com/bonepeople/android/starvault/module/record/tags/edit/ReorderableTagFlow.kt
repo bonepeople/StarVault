@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -30,6 +32,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -61,6 +64,7 @@ object ReorderableTagFlow {
         chipContent: @Composable (tag: String) -> Unit,
     ) {
         val haptic = LocalHapticFeedback.current
+        val density = LocalDensity.current
         val scope = rememberCoroutineScope()
         // 当前被拖动的标签，null 表示没有拖动
         var draggingTag by remember { mutableStateOf<String?>(null) }
@@ -70,6 +74,9 @@ object ReorderableTagFlow {
         var pointerPosition by remember { mutableStateOf(Offset.Zero) }
         // 被拖动标签的缩放比例，长按时立即放大，归位时随位置同步恢复
         var draggingScale by remember { mutableStateOf(1f) }
+        // 拖动标签原始宽度，以及当前显式占位宽度
+        var draggingWidth by remember { mutableStateOf(0) }
+        var placeholderWidth by remember { mutableStateOf(0) }
         // 每个标签在流式布局中的稳定槽位矩形，用于拖动时的命中判断
         val slotRects = remember { mutableMapOf<String, Rect>() }
         // 通过 rememberUpdatedState 让手势回调始终读取到最新的列表与回调
@@ -79,9 +86,10 @@ object ReorderableTagFlow {
         // 拖动结束后将标签平滑归位到它的最终槽位，再退出拖动状态
         fun settleToSlot() {
             val dragged = draggingTag ?: return
-            val target = slotRects[dragged]?.topLeft ?: fingerOffset
             val start = fingerOffset
             val startScale = draggingScale
+            // 立即恢复真实标签宽度，让 FlowRow 的重新排序与浮动标签归位同时开始
+            placeholderWidth = draggingWidth
             scope.launch {
                 animate(
                     initialValue = 0f,
@@ -91,84 +99,116 @@ object ReorderableTagFlow {
                         visibilityThreshold = 0.001f,
                     ),
                 ) { progress, _ ->
+                    // 占位宽度变化后槽位可能换行，动画过程中持续跟随最新目标位置
+                    val target = slotRects[dragged]?.topLeft ?: start
                     fingerOffset = start + (target - start) * progress
                     draggingScale = startScale + (1f - startScale) * progress
                 }
-                fingerOffset = target
+                fingerOffset = slotRects[dragged]?.topLeft ?: fingerOffset
                 draggingScale = 1f
                 draggingTag = null
+                placeholderWidth = 0
             }
         }
 
-        FlowRow(
-            modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(horizontalSpacing),
-            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
-        ) {
-            tags.forEach { tag ->
-                key(tag) {
-                    val isDragging = tag == draggingTag
-                    // 该标签当前的槽位左上角，供被拖动标签计算跟随手指所需的位移
-                    var slot by remember { mutableStateOf(Offset.Zero) }
-                    Box(
-                        modifier = Modifier
-                            .zIndex(if (isDragging) 1f else 0f)
-                            // 放在动画位移之外，捕获到的是稳定的目标槽位（不受归位动画影响）
-                            .onGloballyPositioned { coordinates ->
-                                val position = coordinates.positionInParent()
-                                slot = position
-                                slotRects[tag] = Rect(
-                                    offset = position,
-                                    size = Size(coordinates.size.width.toFloat(), coordinates.size.height.toFloat()),
+        Box(modifier = modifier) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(horizontalSpacing),
+                verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+            ) {
+                tags.forEach { tag ->
+                    key(tag) {
+                        val isDragging = tag == draggingTag
+                        // 该标签当前的槽位左上角，供被拖动标签计算跟随手指所需的位移
+                        var slot by remember { mutableStateOf(Offset.Zero) }
+                        Box(
+                            modifier = Modifier
+                                .then(
+                                    if (isDragging && placeholderWidth > 0) {
+                                        Modifier.width(with(density) { placeholderWidth.toDp() })
+                                    } else {
+                                        Modifier
+                                    },
                                 )
-                            }
-                            .then(
-                                if (isDragging) {
-                                    // 被拖动标签通过同一个动画进度同步改变位置和大小
-                                    Modifier.graphicsLayer {
-                                        translationX = fingerOffset.x - slot.x
-                                        translationY = fingerOffset.y - slot.y
-                                        scaleX = draggingScale
-                                        scaleY = draggingScale
-                                    }
-                                } else {
-                                    // 其余标签：槽位变化时平滑滑动，让出空隙
-                                    Modifier.animatePlacement()
+                                // 放在动画位移之外，捕获到的是稳定的目标槽位（不受归位动画影响）
+                                .onGloballyPositioned { coordinates ->
+                                    val position = coordinates.positionInParent()
+                                    slot = position
+                                    slotRects[tag] = Rect(
+                                        offset = position,
+                                        size = Size(
+                                            coordinates.size.width.toFloat(),
+                                            coordinates.size.height.toFloat(),
+                                        ),
+                                    )
+                                }
+                                // 被拖动项在 FlowRow 中只保留透明占位，实际标签由外层浮动副本绘制
+                                .graphicsLayer { alpha = if (isDragging) 0f else 1f }
+                                .then(if (isDragging) Modifier else Modifier.animatePlacement())
+                                .pointerInput(tag) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = { touchOffset ->
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            val tagRect = slotRects[tag]
+                                            val tagPosition = tagRect?.topLeft ?: slot
+                                            val tagWidth = tagRect?.width?.toInt() ?: 0
+                                            fingerOffset = tagPosition
+                                            pointerPosition = tagPosition + touchOffset
+                                            draggingWidth = tagWidth
+                                            placeholderWidth = tagWidth
+                                            draggingScale = 1.05f
+                                            draggingTag = tag
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            fingerOffset += dragAmount
+                                            pointerPosition += dragAmount
+                                            val dragged = draggingTag
+                                            if (dragged != null) {
+                                                val current = latestTags
+                                                val from = current.indexOf(dragged)
+                                                val to = current.indexOfFirst { candidate ->
+                                                    candidate != dragged &&
+                                                        slotRects[candidate]
+                                                            ?.contains(pointerPosition) == true
+                                                }
+                                                if (from >= 0 && to >= 0 && to != from) {
+                                                    val targetRect = slotRects[current[to]]
+                                                    if (targetRect != null) {
+                                                        placeholderWidth = maxOf(
+                                                            draggingWidth,
+                                                            targetRect.width.toInt(),
+                                                        )
+                                                    }
+                                                    latestOnMove(from, to)
+                                                }
+                                            }
+                                        },
+                                        onDragEnd = { settleToSlot() },
+                                        onDragCancel = { settleToSlot() },
+                                    )
                                 },
-                            )
-                            .pointerInput(tag) {
-                                detectDragGesturesAfterLongPress(
-                                    onDragStart = { touchOffset ->
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        val tagPosition = slotRects[tag]?.topLeft ?: slot
-                                        fingerOffset = tagPosition
-                                        pointerPosition = tagPosition + touchOffset
-                                        draggingScale = 1.05f
-                                        draggingTag = tag
-                                    },
-                                    onDrag = { change, dragAmount ->
-                                        change.consume()
-                                        fingerOffset += dragAmount
-                                        pointerPosition += dragAmount
-                                        val dragged = draggingTag
-                                        if (dragged != null) {
-                                            val current = latestTags
-                                            val from = current.indexOf(dragged)
-                                            val to = current.indexOfFirst { candidate ->
-                                                candidate != dragged && slotRects[candidate]?.contains(pointerPosition) == true
-                                            }
-                                            if (from >= 0 && to >= 0 && to != from) {
-                                                latestOnMove(from, to)
-                                            }
-                                        }
-                                    },
-                                    onDragEnd = { settleToSlot() },
-                                    onDragCancel = { settleToSlot() },
-                                )
-                            },
-                    ) {
-                        chipContent(tag)
+                        ) {
+                            chipContent(tag)
+                        }
                     }
+                }
+            }
+
+            val dragged = draggingTag
+            if (dragged != null) {
+                Box(
+                    modifier = Modifier
+                        .zIndex(1f)
+                        .graphicsLayer {
+                            translationX = fingerOffset.x
+                            translationY = fingerOffset.y
+                            scaleX = draggingScale
+                            scaleY = draggingScale
+                        },
+                ) {
+                    chipContent(dragged)
                 }
             }
         }
