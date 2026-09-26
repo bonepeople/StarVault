@@ -114,7 +114,13 @@ class TagsEditFragment : BaseFragment() {
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "长按并拖动标签可调整顺序",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(12.dp))
                 TagList(
                     tags = uiState.tags,
                     onDelete = { action(TagsEditUserAction.ClickDelete(it)) },
