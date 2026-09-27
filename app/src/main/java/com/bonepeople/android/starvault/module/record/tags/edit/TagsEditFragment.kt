@@ -215,6 +215,7 @@ class TagsEditFragment : BaseFragment() {
         ) {
             Text(
                 text = text,
+                modifier = Modifier.weight(weight = 1f, fill = false),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 maxLines = 1,
