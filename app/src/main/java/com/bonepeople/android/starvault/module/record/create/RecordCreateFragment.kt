@@ -33,9 +33,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
-import com.bonepeople.android.starvault.ui.component.RecordTag
+import com.bonepeople.android.starvault.global.util.ClickExtension
 import com.bonepeople.android.starvault.module.record.detail.RecordDetailFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
+import com.bonepeople.android.starvault.ui.component.RecordTag
 
 class RecordCreateFragment : BaseFragment() {
     private val viewModel: RecordCreatePageModel by viewModels()
@@ -136,7 +137,7 @@ class RecordCreateFragment : BaseFragment() {
                 )
             }
             Button(
-                onClick = { action(RecordCreateUserAction.ClickNext) },
+                onClick = ClickExtension.rememberSingleClick { action(RecordCreateUserAction.ClickNext) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 16.dp),

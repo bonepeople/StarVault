@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.util.ClickExtension
 
 class HomeFragment : BaseFragment() {
     private val viewModel: HomePageModel by viewModels()
@@ -59,10 +60,10 @@ class HomeFragment : BaseFragment() {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(text = "HomeFragment")
-                Button(onClick = { action(HomeUserAction.ClickCreate) }) {
+                Button(onClick = ClickExtension.rememberSingleClick { action(HomeUserAction.ClickCreate) }) {
                     Text(text = "创建")
                 }
-                Button(onClick = { action(HomeUserAction.ClickOpen) }) {
+                Button(onClick = ClickExtension.rememberSingleClick { action(HomeUserAction.ClickOpen) }) {
                     Text(text = "打开")
                 }
             }

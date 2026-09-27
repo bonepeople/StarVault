@@ -2,7 +2,6 @@ package com.bonepeople.android.starvault.module.record.detail
 
 import android.os.Bundle
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,8 +33,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
-import com.bonepeople.android.starvault.ui.component.RecordTag
+import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
+import com.bonepeople.android.starvault.ui.component.RecordTag
 import com.bonepeople.android.widget.util.AppTime
 
 class RecordDetailFragment : BaseFragment() {
@@ -187,7 +187,7 @@ class RecordDetailFragment : BaseFragment() {
                         "查看历史（${field.history.size}）"
                     },
                     modifier = Modifier
-                        .clickable(onClick = onToggleHistory)
+                        .singleClick(onClick = onToggleHistory)
                         .padding(vertical = 2.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,

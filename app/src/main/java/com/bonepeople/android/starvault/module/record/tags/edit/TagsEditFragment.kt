@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +51,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.util.ClickExtension
+import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import kotlinx.coroutines.launch
 
 class TagsEditFragment : BaseFragment() {
@@ -129,7 +130,7 @@ class TagsEditFragment : BaseFragment() {
                 Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier
-                        .clickable { action(TagsEditUserAction.ClickOpenAddDialog) }
+                        .singleClick { action(TagsEditUserAction.ClickOpenAddDialog) }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -224,7 +225,7 @@ class TagsEditFragment : BaseFragment() {
             Box(
                 modifier = Modifier
                     .size(18.dp)
-                    .clickable(onClick = onDelete),
+                    .singleClick(onClick = onDelete),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -277,7 +278,7 @@ class TagsEditFragment : BaseFragment() {
         Text(
             text = text,
             modifier = modifier
-                .clickable(onClick = onClick)
+                .singleClick(onClick = onClick)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
                     shape = RoundedCornerShape(6.dp),
@@ -328,12 +329,12 @@ class TagsEditFragment : BaseFragment() {
                 )
             },
             confirmButton = {
-                TextButton(onClick = onConfirm) {
+                TextButton(onClick = ClickExtension.rememberSingleClick(onClick = onConfirm)) {
                     Text(text = "添加")
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) {
+                TextButton(onClick = ClickExtension.rememberSingleClick(onClick = onDismiss)) {
                     Text(text = "取消")
                 }
             },

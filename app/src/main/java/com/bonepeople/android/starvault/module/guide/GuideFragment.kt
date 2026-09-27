@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.util.ClickExtension
 import com.bonepeople.android.starvault.global.util.DataUtil
 import com.bonepeople.android.starvault.module.home.HomeFragment
 import kotlinx.coroutines.launch
@@ -42,7 +43,7 @@ class GuideFragment : BaseFragment() {
             ) {
                 Text(text = "GuideFragment")
                 Button(
-                    onClick = {
+                    onClick = ClickExtension.rememberSingleClick {
                         viewLifecycleOwner.lifecycleScope.launch {
                             DataUtil.appStart.putBoolean(DataUtil.Key.AppStart.HAS_VIEWED_GUIDE, true)
                             StandardActivity.open(HomeFragment())

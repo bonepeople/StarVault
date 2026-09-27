@@ -1,7 +1,6 @@
 package com.bonepeople.android.starvault.module.record.list
 
 import android.os.Bundle
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.util.ClickExtension
+import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.ui.component.RecordTag
 
 class RecordListFragment : BaseFragment() {
@@ -99,7 +100,7 @@ class RecordListFragment : BaseFragment() {
             }
             if (!uiState.loading) {
                 Button(
-                    onClick = { action(RecordListUserAction.ClickCreate) },
+                    onClick = ClickExtension.rememberSingleClick { action(RecordListUserAction.ClickCreate) },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp),
@@ -119,7 +120,7 @@ class RecordListFragment : BaseFragment() {
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .singleClick(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
