@@ -1,5 +1,6 @@
 package com.bonepeople.android.starvault.module.record.detail
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,7 +61,9 @@ class RecordDetailFragment : BaseFragment() {
     private fun openTagsEdit(tags: List<String>) {
         StandardActivity.call(TagsEditFragment.newInstance(tags)).onSuccess { intent ->
             val resultTags = intent?.getStringArrayListExtra(TagsEditFragment.EXTRA_TAGS) ?: return@onSuccess
+            if (resultTags == tags) return@onSuccess
             viewModel.dispatch(RecordDetailUserAction.TagsUpdated(resultTags))
+            requireActivity().setResult(Activity.RESULT_OK)
         }
     }
 

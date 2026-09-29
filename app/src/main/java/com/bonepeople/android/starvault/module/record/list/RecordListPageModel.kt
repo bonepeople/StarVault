@@ -48,6 +48,8 @@ class RecordListPageModel : ViewModel() {
     }
 
     private fun onRecordClicked(recordId: String) {
-        StandardActivity.open(RecordDetailFragment.newInstance(recordId))
+        StandardActivity.call(RecordDetailFragment.newInstance(recordId)).onSuccess {
+            loadRecords()
+        }
     }
 }
