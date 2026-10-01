@@ -26,6 +26,7 @@ class RecordDetailPageModel : ViewModel() {
     fun dispatch(action: RecordDetailUserAction) {
         when (action) {
             RecordDetailUserAction.ClickTags -> onTagsClicked()
+            RecordDetailUserAction.ClickAddField -> onAddFieldClicked()
             is RecordDetailUserAction.TagsUpdated -> onTagsUpdated(action.tags)
             is RecordDetailUserAction.ToggleFieldHistory -> toggleFieldHistory(action.fieldId)
         }
@@ -34,6 +35,12 @@ class RecordDetailPageModel : ViewModel() {
     private fun onTagsClicked() {
         viewModelScope.launchOnDefault {
             _effect.send(RecordDetailEffect.OpenTagsEdit(uiState.value.tags))
+        }
+    }
+
+    private fun onAddFieldClicked() {
+        viewModelScope.launchOnDefault {
+            _effect.send(RecordDetailEffect.OpenFieldsEdit)
         }
     }
 

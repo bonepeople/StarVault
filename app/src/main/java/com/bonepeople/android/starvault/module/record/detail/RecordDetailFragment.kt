@@ -40,10 +40,10 @@ import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
+import com.bonepeople.android.starvault.module.record.fields.edit.FieldsEditFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
 import com.bonepeople.android.starvault.ui.component.RecordTag
 import com.bonepeople.android.widget.util.AppTime
-import com.bonepeople.android.widget.util.AppToast
 
 class RecordDetailFragment : BaseFragment() {
     private val viewModel: RecordDetailPageModel by viewModels()
@@ -58,6 +58,7 @@ class RecordDetailFragment : BaseFragment() {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
                 is RecordDetailEffect.OpenTagsEdit -> openTagsEdit(effect.tags)
+                RecordDetailEffect.OpenFieldsEdit -> StandardActivity.open(FieldsEditFragment.newInstance())
             }
         }
         val recordId = requireArguments().getString(ARG_RECORD_ID).orEmpty()
@@ -137,7 +138,7 @@ class RecordDetailFragment : BaseFragment() {
                             )
                         }
                         item(key = "ADD_FIELD", contentType = "CONTENT_TYPE_ADD_FIELD_ITEM") {
-                            AddFieldRow(onClick = { AppToast.show("添加字段") })
+                            AddFieldRow(onClick = { action(RecordDetailUserAction.ClickAddField) })
                         }
                     }
                 }
