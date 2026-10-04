@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
+import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -40,7 +41,7 @@ class RecordDetailPageModel : ViewModel() {
 
     private fun onAddFieldClicked() {
         viewModelScope.launchOnDefault {
-            _effect.send(RecordDetailEffect.OpenFieldsEdit)
+            _effect.send(RecordDetailEffect.OpenFieldsEdit(VaultFieldInfo()))
         }
     }
 

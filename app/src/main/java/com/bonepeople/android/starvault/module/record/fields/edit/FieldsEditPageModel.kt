@@ -3,6 +3,7 @@ package com.bonepeople.android.starvault.module.record.fields.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
+import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -12,6 +13,14 @@ class FieldsEditPageModel : ViewModel() {
     val uiState: MutableStateFlow<FieldsEditState> = MutableStateFlow(FieldsEditState.Default)
     private val _effect = Channel<FieldsEditEffect>(capacity = Channel.UNLIMITED)
     val effect = _effect.receiveAsFlow()
+    private var initialized = false
+
+    fun init(field: VaultFieldInfo) {
+        if (initialized) return
+        initialized = true
+        val current = field.snapshotList.firstOrNull()
+        uiState.update { it.copy(name = current?.name.orEmpty(), value = current?.value.orEmpty()) }
+    }
 
     fun dispatch(action: FieldsEditUserAction) {
         when (action) {

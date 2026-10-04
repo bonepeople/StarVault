@@ -58,7 +58,7 @@ class RecordDetailFragment : BaseFragment() {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
                 is RecordDetailEffect.OpenTagsEdit -> openTagsEdit(effect.tags)
-                RecordDetailEffect.OpenFieldsEdit -> StandardActivity.open(FieldsEditFragment.newInstance())
+                is RecordDetailEffect.OpenFieldsEdit -> StandardActivity.open(FieldsEditFragment.newInstance(effect.field))
             }
         }
         val recordId = requireArguments().getString(ARG_RECORD_ID).orEmpty()

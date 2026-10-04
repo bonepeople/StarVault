@@ -18,11 +18,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.data.VaultFieldInfo
+import com.bonepeople.android.widget.util.AppGson
 
 class FieldsEditFragment : BaseFragment() {
     private val viewModel: FieldsEditPageModel by viewModels()
@@ -39,6 +42,12 @@ class FieldsEditFragment : BaseFragment() {
                 FieldsEditEffect.Finish -> requireActivity().finishAfterTransition()
             }
         }
+
+        val field = runCatching {
+            val fieldJson = requireArguments().getString(ARG_FIELD_JSON)
+            AppGson.toObject<VaultFieldInfo>(fieldJson)
+        }.getOrDefault(VaultFieldInfo())
+        viewModel.init(field)
     }
 
     override fun handleBackPress() {
@@ -91,8 +100,12 @@ class FieldsEditFragment : BaseFragment() {
     }
 
     companion object {
-        fun newInstance(): FieldsEditFragment {
-            return FieldsEditFragment()
+        private const val ARG_FIELD_JSON = "field_json"
+
+        fun newInstance(field: VaultFieldInfo): FieldsEditFragment {
+            return FieldsEditFragment().apply {
+                arguments = bundleOf(ARG_FIELD_JSON to AppGson.toJson(field))
+            }
         }
     }
 }
