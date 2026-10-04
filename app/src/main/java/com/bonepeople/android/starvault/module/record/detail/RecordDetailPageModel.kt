@@ -16,6 +16,7 @@ class RecordDetailPageModel : ViewModel() {
     val effect = _effect.receiveAsFlow()
     private var initialized = false
     private var recordId: String = ""
+    private var recordFields: List<VaultFieldInfo> = emptyList()
 
     fun init(recordId: String) {
         if (initialized) return
@@ -28,6 +29,7 @@ class RecordDetailPageModel : ViewModel() {
         when (action) {
             RecordDetailUserAction.ClickTags -> onTagsClicked()
             RecordDetailUserAction.ClickAddField -> onAddFieldClicked()
+            is RecordDetailUserAction.ClickField -> onFieldClicked(action.fieldId)
             is RecordDetailUserAction.TagsUpdated -> onTagsUpdated(action.tags)
             is RecordDetailUserAction.ToggleFieldHistory -> toggleFieldHistory(action.fieldId)
         }
@@ -45,6 +47,13 @@ class RecordDetailPageModel : ViewModel() {
         }
     }
 
+    private fun onFieldClicked(fieldId: String) {
+        val field = recordFields.firstOrNull { it.id == fieldId } ?: return
+        viewModelScope.launchOnDefault {
+            _effect.send(RecordDetailEffect.OpenFieldsEdit(field))
+        }
+    }
+
     private fun onTagsUpdated(tags: List<String>) {
         uiState.update { it.copy(tags = tags) }
         VaultManager.updateRecordTags(recordId, tags)
@@ -55,9 +64,11 @@ class RecordDetailPageModel : ViewModel() {
             uiState.update { it.copy(loading = true) }
             val record = VaultManager.findRecordById(recordId)
             if (record == null) {
+                recordFields = emptyList()
                 uiState.update { it.copy(loading = false, notFound = true) }
                 return@launchOnDefault
             }
+            recordFields = record.fieldList
             val fields = record.fieldList.map { field ->
                 val snapshots = field.snapshotList
                 val current = snapshots.firstOrNull()

@@ -64,7 +64,7 @@ class FieldsEditFragment : BaseFragment() {
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
             Text(
-                text = "编辑字段",
+                text = if (uiState.id.isEmpty()) "添加字段" else "编辑字段",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )

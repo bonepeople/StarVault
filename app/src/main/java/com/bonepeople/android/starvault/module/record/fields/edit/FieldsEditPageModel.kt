@@ -19,7 +19,13 @@ class FieldsEditPageModel : ViewModel() {
         if (initialized) return
         initialized = true
         val current = field.snapshotList.firstOrNull()
-        uiState.update { it.copy(name = current?.name.orEmpty(), value = current?.value.orEmpty()) }
+        uiState.update {
+            it.copy(
+                id = field.id,
+                name = current?.name.orEmpty(),
+                value = current?.value.orEmpty(),
+            )
+        }
     }
 
     fun dispatch(action: FieldsEditUserAction) {
@@ -41,7 +47,7 @@ class FieldsEditPageModel : ViewModel() {
     private fun onBackPressed() {
         val name = uiState.value.name.trim()
         val value = uiState.value.value.trim()
-        if (name.isEmpty() && value.isEmpty()) {
+        if (uiState.value.id.isEmpty() && name.isEmpty() && value.isEmpty()) {
             finish()
             return
         }

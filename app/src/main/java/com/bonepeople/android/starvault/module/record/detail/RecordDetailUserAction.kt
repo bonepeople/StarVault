@@ -5,6 +5,8 @@ sealed interface RecordDetailUserAction {
     object ClickTags : RecordDetailUserAction
     // 用户点击添加字段
     object ClickAddField : RecordDetailUserAction
+    // 用户点击已有字段
+    data class ClickField(val fieldId: String) : RecordDetailUserAction
     // 标签编辑页返回后回写标签
     data class TagsUpdated(val tags: List<String>) : RecordDetailUserAction
     // 用户点击展开/收起字段历史

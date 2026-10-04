@@ -128,6 +128,9 @@ class RecordDetailFragment : BaseFragment() {
                         ) { field ->
                             FieldRow(
                                 field = field,
+                                onClick = {
+                                    action(RecordDetailUserAction.ClickField(field.id))
+                                },
                                 onToggleHistory = {
                                     action(RecordDetailUserAction.ToggleFieldHistory(field.id))
                                 },
@@ -200,6 +203,7 @@ class RecordDetailFragment : BaseFragment() {
     @Composable
     private fun FieldRow(
         field: RecordDetailState.Field,
+        onClick: () -> Unit,
         onToggleHistory: () -> Unit,
         modifier: Modifier = Modifier,
     ) {
@@ -209,16 +213,23 @@ class RecordDetailFragment : BaseFragment() {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(
-                text = field.name,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = field.currentValue.ifEmpty { "—" },
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .singleClick(onClick = onClick),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = field.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = field.currentValue.ifEmpty { "—" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             if (field.history.isNotEmpty()) {
                 Text(
                     text = if (field.historyExpanded) {
