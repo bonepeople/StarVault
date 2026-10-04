@@ -1,6 +1,8 @@
 package com.bonepeople.android.starvault.module.record.fields.edit
 
 import android.os.Bundle
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -10,6 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -26,6 +31,7 @@ import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.widget.util.AppGson
+import com.bonepeople.android.widget.util.AppTime
 
 class FieldsEditFragment : BaseFragment() {
     private val viewModel: FieldsEditPageModel by viewModels()
@@ -61,6 +67,7 @@ class FieldsEditFragment : BaseFragment() {
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
             Text(
@@ -95,6 +102,48 @@ class FieldsEditFragment : BaseFragment() {
                     null
                 },
                 singleLine = true,
+            )
+            if (uiState.history.isNotEmpty()) {
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    text = "历史记录",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            shape = RoundedCornerShape(8.dp),
+                        )
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    uiState.history.forEach { item ->
+                        HistoryItem(item = item)
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun HistoryItem(item: FieldsEditState.HistoryItem) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = item.value.ifEmpty { "—" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = AppTime.formatTime(item.createTimestamp, "yyyy-MM-dd HH:mm"),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             )
         }
     }

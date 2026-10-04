@@ -24,6 +24,12 @@ class FieldsEditPageModel : ViewModel() {
                 id = field.id,
                 name = current?.name.orEmpty(),
                 value = current?.value.orEmpty(),
+                history = field.snapshotList.drop(1).map { snapshot ->
+                    FieldsEditState.HistoryItem(
+                        value = snapshot.value,
+                        createTimestamp = snapshot.createTimestamp,
+                    )
+                },
             )
         }
     }
