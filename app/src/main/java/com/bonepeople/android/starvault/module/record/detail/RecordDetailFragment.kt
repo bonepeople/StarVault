@@ -2,7 +2,6 @@ package com.bonepeople.android.starvault.module.record.detail
 
 import android.app.Activity
 import android.os.Bundle
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,7 +41,6 @@ import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.fields.edit.FieldsEditFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
 import com.bonepeople.android.starvault.ui.component.RecordTag
-import com.bonepeople.android.widget.util.AppTime
 
 class RecordDetailFragment : BaseFragment() {
     private val viewModel: RecordDetailPageModel by viewModels()
@@ -131,9 +128,6 @@ class RecordDetailFragment : BaseFragment() {
                                 onClick = {
                                     action(RecordDetailUserAction.ClickField(field.id))
                                 },
-                                onToggleHistory = {
-                                    action(RecordDetailUserAction.ToggleFieldHistory(field.id))
-                                },
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -204,80 +198,24 @@ class RecordDetailFragment : BaseFragment() {
     private fun FieldRow(
         field: RecordDetailState.Field,
         onClick: () -> Unit,
-        onToggleHistory: () -> Unit,
         modifier: Modifier = Modifier,
     ) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
+                .singleClick(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .singleClick(onClick = onClick),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = field.name,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = field.currentValue.ifEmpty { "—" },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            if (field.history.isNotEmpty()) {
-                Text(
-                    text = if (field.historyExpanded) {
-                        "收起历史（${field.history.size}）"
-                    } else {
-                        "查看历史（${field.history.size}）"
-                    },
-                    modifier = Modifier
-                        .singleClick(onClick = onToggleHistory)
-                        .padding(vertical = 2.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                if (field.historyExpanded) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                shape = RoundedCornerShape(8.dp),
-                            )
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        field.history.forEach { item ->
-                            HistoryItem(item = item)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun HistoryItem(item: RecordDetailState.Field.HistoryItem) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
             Text(
-                text = item.value.ifEmpty { "—" },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                text = field.name,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = AppTime.formatTime(item.createTimestamp, "yyyy-MM-dd"),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                text = field.currentValue.ifEmpty { "—" },
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

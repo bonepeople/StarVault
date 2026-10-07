@@ -31,7 +31,6 @@ class RecordDetailPageModel : ViewModel() {
             RecordDetailUserAction.ClickAddField -> onAddFieldClicked()
             is RecordDetailUserAction.ClickField -> onFieldClicked(action.fieldId)
             is RecordDetailUserAction.TagsUpdated -> onTagsUpdated(action.tags)
-            is RecordDetailUserAction.ToggleFieldHistory -> toggleFieldHistory(action.fieldId)
         }
     }
 
@@ -70,19 +69,11 @@ class RecordDetailPageModel : ViewModel() {
             }
             recordFields = record.fieldList
             val fields = record.fieldList.map { field ->
-                val snapshots = field.snapshotList
-                val current = snapshots.firstOrNull()
-                val history = snapshots.drop(1).map { snapshot ->
-                    RecordDetailState.Field.HistoryItem(
-                        value = snapshot.value,
-                        createTimestamp = snapshot.createTimestamp,
-                    )
-                }
+                val current = field.snapshotList.firstOrNull()
                 RecordDetailState.Field(
                     id = field.id,
                     name = current?.name.orEmpty().ifEmpty { "未命名" },
                     currentValue = current?.value.orEmpty(),
-                    history = history,
                 )
             }
             uiState.update {
@@ -93,20 +84,6 @@ class RecordDetailPageModel : ViewModel() {
                     fields = fields,
                 )
             }
-        }
-    }
-
-    private fun toggleFieldHistory(fieldId: String) {
-        uiState.update { state ->
-            state.copy(
-                fields = state.fields.map { field ->
-                    if (field.id == fieldId) {
-                        field.copy(historyExpanded = !field.historyExpanded)
-                    } else {
-                        field
-                    }
-                },
-            )
         }
     }
 }

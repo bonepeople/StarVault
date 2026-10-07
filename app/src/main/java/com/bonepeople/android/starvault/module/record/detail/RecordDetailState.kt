@@ -21,18 +21,7 @@ data class RecordDetailState(
         val name: String = "",
         @SerializedName("currentValue")
         val currentValue: String = "",
-        @SerializedName("historyExpanded")
-        val historyExpanded: Boolean = false,
-        @SerializedName("history")
-        val history: List<HistoryItem> = emptyList(),
-    ) {
-        data class HistoryItem(
-            @SerializedName("value")
-            val value: String = "",
-            @SerializedName("createTimestamp")
-            val createTimestamp: Long = 0L,
-        )
-    }
+    )
 
     @Suppress("unused")
     object Preview {
@@ -49,11 +38,6 @@ data class RecordDetailState(
                     id = "2",
                     name = "密码",
                     currentValue = "P@ssw0rd_2026!",
-                    history = listOf(
-                        Field.HistoryItem("TmpP@ss2025", 1_758_355_200_000L),
-                        Field.HistoryItem("OldP@ss2024", 1_717_228_800_000L),
-                    ),
-                    historyExpanded = true,
                 ),
                 Field(
                     id = "3",
