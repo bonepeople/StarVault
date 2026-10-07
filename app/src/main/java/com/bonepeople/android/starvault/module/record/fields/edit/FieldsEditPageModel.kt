@@ -4,20 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
+import com.bonepeople.android.starvault.global.data.VaultFieldSnapshotInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 class FieldsEditPageModel : ViewModel() {
     val uiState: MutableStateFlow<FieldsEditState> = MutableStateFlow(FieldsEditState.Default)
     private val _effect = Channel<FieldsEditEffect>(capacity = Channel.UNLIMITED)
     val effect = _effect.receiveAsFlow()
     private var initialized = false
+    private var initialField: VaultFieldInfo = VaultFieldInfo()
 
     fun init(field: VaultFieldInfo) {
         if (initialized) return
         initialized = true
+        initialField = field
         val current = field.snapshotList.firstOrNull()
         uiState.update {
             it.copy(
@@ -59,12 +63,21 @@ class FieldsEditPageModel : ViewModel() {
             uiState.update { it.copy(nameError = nameError, valueError = valueError) }
             return
         }
-        finish()
+        val snapshot = VaultFieldSnapshotInfo(
+            name = name,
+            value = value,
+            createTimestamp = System.currentTimeMillis(),
+        )
+        val field = VaultFieldInfo(
+            id = uiState.value.id.ifEmpty { UUID.randomUUID().toString() },
+            snapshotList = listOf(snapshot) + initialField.snapshotList,
+        )
+        finishSaved(field)
     }
 
-    private fun finish() {
+    private fun finishSaved(field: VaultFieldInfo) {
         viewModelScope.launchOnDefault {
-            _effect.send(FieldsEditEffect.Finish)
+            _effect.send(FieldsEditEffect.FinishSaved(field))
         }
     }
 }

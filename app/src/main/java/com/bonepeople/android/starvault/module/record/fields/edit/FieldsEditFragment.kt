@@ -1,5 +1,7 @@
 package com.bonepeople.android.starvault.module.record.fields.edit
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +48,7 @@ class FieldsEditFragment : BaseFragment() {
     override fun initData(savedInstanceState: Bundle?) {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
-                FieldsEditEffect.Finish -> requireActivity().finishAfterTransition()
+                is FieldsEditEffect.FinishSaved -> finishSaved(effect.field)
             }
         }
 
@@ -55,6 +57,12 @@ class FieldsEditFragment : BaseFragment() {
             AppGson.toObject<VaultFieldInfo>(fieldJson)
         }.getOrDefault(VaultFieldInfo())
         viewModel.init(field)
+    }
+
+    private fun finishSaved(field: VaultFieldInfo) {
+        val result = Intent().putExtra(EXTRA_FIELD_JSON, AppGson.toJson(field))
+        requireActivity().setResult(Activity.RESULT_OK, result)
+        requireActivity().finishAfterTransition()
     }
 
     @Preview(showSystemUi = true)
@@ -153,6 +161,7 @@ class FieldsEditFragment : BaseFragment() {
     }
 
     companion object {
+        const val EXTRA_FIELD_JSON = "field_json"
         private const val ARG_FIELD_JSON = "field_json"
 
         fun newInstance(field: VaultFieldInfo): FieldsEditFragment {
