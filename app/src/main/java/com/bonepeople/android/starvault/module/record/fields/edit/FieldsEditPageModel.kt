@@ -38,7 +38,7 @@ class FieldsEditPageModel : ViewModel() {
         when (action) {
             is FieldsEditUserAction.UpdateName -> onNameUpdated(action.name)
             is FieldsEditUserAction.UpdateValue -> onValueUpdated(action.value)
-            FieldsEditUserAction.ClickBack -> onBackPressed()
+            FieldsEditUserAction.ClickConfirm -> onConfirmClicked()
         }
     }
 
@@ -50,13 +50,9 @@ class FieldsEditPageModel : ViewModel() {
         uiState.update { it.copy(value = value, valueError = "") }
     }
 
-    private fun onBackPressed() {
+    private fun onConfirmClicked() {
         val name = uiState.value.name.trim()
         val value = uiState.value.value.trim()
-        if (uiState.value.id.isEmpty() && name.isEmpty() && value.isEmpty()) {
-            finish()
-            return
-        }
         val nameError = if (name.isEmpty()) "请输入字段名称" else ""
         val valueError = if (value.isEmpty()) "请输入字段值" else ""
         if (nameError.isNotEmpty() || valueError.isNotEmpty()) {

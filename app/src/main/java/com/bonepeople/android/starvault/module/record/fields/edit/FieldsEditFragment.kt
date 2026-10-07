@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -54,10 +55,6 @@ class FieldsEditFragment : BaseFragment() {
             AppGson.toObject<VaultFieldInfo>(fieldJson)
         }.getOrDefault(VaultFieldInfo())
         viewModel.init(field)
-    }
-
-    override fun handleBackPress() {
-        viewModel.dispatch(FieldsEditUserAction.ClickBack)
     }
 
     @Preview(showSystemUi = true)
@@ -103,6 +100,13 @@ class FieldsEditFragment : BaseFragment() {
                 },
                 singleLine = true,
             )
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = { action(FieldsEditUserAction.ClickConfirm) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = "确认")
+            }
             if (uiState.history.isNotEmpty()) {
                 Spacer(Modifier.height(24.dp))
                 Text(
