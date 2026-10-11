@@ -30,6 +30,16 @@ object VaultManager {
         )
     }
 
+    fun updateRecordFields(recordId: String, fieldList: List<VaultFieldInfo>) {
+        updateVault(
+            currentVault.copy(
+                recordList = currentVault.recordList.map { record ->
+                    if (record.id == recordId) record.copy(fieldList = fieldList) else record
+                },
+            ),
+        )
+    }
+
     fun generateFakeVault() {
         updateVault(VaultInfo(
             id = UUID.randomUUID().toString(),

@@ -78,6 +78,7 @@ class RecordDetailFragment : BaseFragment() {
             val fieldJson = intent?.getStringExtra(FieldsEditFragment.EXTRA_FIELD_JSON) ?: return@onSuccess
             val resultField = runCatching { AppGson.toObject<VaultFieldInfo>(fieldJson) }.getOrNull() ?: return@onSuccess
             viewModel.dispatch(RecordDetailUserAction.FieldSaved(resultField))
+            requireActivity().setResult(Activity.RESULT_OK)
         }
     }
 

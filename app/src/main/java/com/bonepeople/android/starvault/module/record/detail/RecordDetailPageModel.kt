@@ -68,6 +68,7 @@ class RecordDetailPageModel : ViewModel() {
             recordFields + field
         }
         uiState.update { it.copy(fields = recordFields.map { item -> item.toStateField() }) }
+        VaultManager.updateRecordFields(recordId, recordFields)
     }
 
     private fun loadRecord() {
