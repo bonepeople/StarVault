@@ -37,10 +37,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.fields.edit.FieldsEditFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
 import com.bonepeople.android.starvault.ui.component.RecordTag
+import com.bonepeople.android.widget.util.AppGson
 
 class RecordDetailFragment : BaseFragment() {
     private val viewModel: RecordDetailPageModel by viewModels()
@@ -55,7 +57,7 @@ class RecordDetailFragment : BaseFragment() {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
                 is RecordDetailEffect.OpenTagsEdit -> openTagsEdit(effect.tags)
-                is RecordDetailEffect.OpenFieldsEdit -> StandardActivity.open(FieldsEditFragment.newInstance(effect.field))
+                is RecordDetailEffect.OpenFieldsEdit -> openFieldsEdit(effect.field)
             }
         }
         val recordId = requireArguments().getString(ARG_RECORD_ID).orEmpty()
@@ -68,6 +70,14 @@ class RecordDetailFragment : BaseFragment() {
             if (resultTags == tags) return@onSuccess
             viewModel.dispatch(RecordDetailUserAction.TagsUpdated(resultTags))
             requireActivity().setResult(Activity.RESULT_OK)
+        }
+    }
+
+    private fun openFieldsEdit(field: VaultFieldInfo) {
+        StandardActivity.call(FieldsEditFragment.newInstance(field)).onSuccess { intent ->
+            val fieldJson = intent?.getStringExtra(FieldsEditFragment.EXTRA_FIELD_JSON) ?: return@onSuccess
+            val resultField = runCatching { AppGson.toObject<VaultFieldInfo>(fieldJson) }.getOrNull() ?: return@onSuccess
+            viewModel.dispatch(RecordDetailUserAction.FieldSaved(resultField))
         }
     }
 

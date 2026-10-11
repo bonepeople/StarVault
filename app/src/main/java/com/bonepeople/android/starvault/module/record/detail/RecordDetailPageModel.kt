@@ -30,6 +30,7 @@ class RecordDetailPageModel : ViewModel() {
             RecordDetailUserAction.ClickTags -> onTagsClicked()
             RecordDetailUserAction.ClickAddField -> onAddFieldClicked()
             is RecordDetailUserAction.ClickField -> onFieldClicked(action.fieldId)
+            is RecordDetailUserAction.FieldSaved -> onFieldSaved(action.field)
             is RecordDetailUserAction.TagsUpdated -> onTagsUpdated(action.tags)
         }
     }
@@ -58,6 +59,17 @@ class RecordDetailPageModel : ViewModel() {
         VaultManager.updateRecordTags(recordId, tags)
     }
 
+    private fun onFieldSaved(field: VaultFieldInfo) {
+        if (field.id.isEmpty() || field.snapshotList.isEmpty()) return
+        val fieldExists = recordFields.any { it.id == field.id }
+        recordFields = if (fieldExists) {
+            recordFields.map { if (it.id == field.id) field else it }
+        } else {
+            recordFields + field
+        }
+        uiState.update { it.copy(fields = recordFields.map { item -> item.toStateField() }) }
+    }
+
     private fun loadRecord() {
         viewModelScope.launchOnDefault {
             uiState.update { it.copy(loading = true) }
@@ -68,22 +80,23 @@ class RecordDetailPageModel : ViewModel() {
                 return@launchOnDefault
             }
             recordFields = record.fieldList
-            val fields = record.fieldList.map { field ->
-                val current = field.snapshotList.firstOrNull()
-                RecordDetailState.Field(
-                    id = field.id,
-                    name = current?.name.orEmpty().ifEmpty { "未命名" },
-                    currentValue = current?.value.orEmpty(),
-                )
-            }
             uiState.update {
                 it.copy(
                     loading = false,
                     title = record.title,
                     tags = record.tagList,
-                    fields = fields,
+                    fields = recordFields.map { field -> field.toStateField() },
                 )
             }
         }
+    }
+
+    private fun VaultFieldInfo.toStateField(): RecordDetailState.Field {
+        val current = snapshotList.firstOrNull()
+        return RecordDetailState.Field(
+            id = id,
+            name = current?.name.orEmpty().ifEmpty { "未命名" },
+            currentValue = current?.value.orEmpty(),
+        )
     }
 }
