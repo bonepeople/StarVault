@@ -16,14 +16,25 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
@@ -38,16 +49,18 @@ import com.bonepeople.android.widget.util.AppTime
 
 class FieldsEditFragment : BaseFragment() {
     private val viewModel: FieldsEditPageModel by viewModels()
+    private var focusTarget: FieldsEditEffect.FocusTarget? by mutableStateOf(null)
 
     @Composable
     override fun Content() {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle(viewLifecycleOwner.lifecycle)
-        ComposeContent(uiState = uiState, action = viewModel::dispatch)
+        ComposeContent(uiState = uiState, focusTarget = focusTarget, action = viewModel::dispatch)
     }
 
     override fun initData(savedInstanceState: Bundle?) {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
+                is FieldsEditEffect.RequestFocus -> focusTarget = effect.target
                 is FieldsEditEffect.FinishSaved -> finishSaved(effect.field)
             }
         }
@@ -67,7 +80,23 @@ class FieldsEditFragment : BaseFragment() {
 
     @Preview(showSystemUi = true)
     @Composable
-    private fun ComposeContent(uiState: FieldsEditState = FieldsEditState.Preview.Normal, action: (FieldsEditUserAction) -> Unit = {}) {
+    private fun ComposeContent(
+        uiState: FieldsEditState = FieldsEditState.Preview.Normal,
+        focusTarget: FieldsEditEffect.FocusTarget? = null,
+        action: (FieldsEditUserAction) -> Unit = {},
+    ) {
+        val nameFocusRequester = remember { FocusRequester() }
+        val valueFocusRequester = remember { FocusRequester() }
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
+        LaunchedEffect(focusTarget) {
+            when (focusTarget) {
+                FieldsEditEffect.FocusTarget.Name -> nameFocusRequester.requestFocus()
+                FieldsEditEffect.FocusTarget.Value -> valueFocusRequester.requestFocus()
+                null -> return@LaunchedEffect
+            }
+            keyboardController?.show()
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -84,7 +113,9 @@ class FieldsEditFragment : BaseFragment() {
             OutlinedTextField(
                 value = uiState.name,
                 onValueChange = { action(FieldsEditUserAction.UpdateName(it)) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(nameFocusRequester),
                 label = { Text(text = "字段名称") },
                 isError = uiState.nameError.isNotEmpty(),
                 supportingText = if (uiState.nameError.isNotEmpty()) {
@@ -93,12 +124,16 @@ class FieldsEditFragment : BaseFragment() {
                     null
                 },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { valueFocusRequester.requestFocus() }),
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = uiState.value,
                 onValueChange = { action(FieldsEditUserAction.UpdateValue(it)) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(valueFocusRequester),
                 label = { Text(text = "字段值") },
                 isError = uiState.valueError.isNotEmpty(),
                 supportingText = if (uiState.valueError.isNotEmpty()) {
@@ -107,6 +142,13 @@ class FieldsEditFragment : BaseFragment() {
                     null
                 },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    },
+                ),
             )
             Spacer(Modifier.height(16.dp))
             Button(

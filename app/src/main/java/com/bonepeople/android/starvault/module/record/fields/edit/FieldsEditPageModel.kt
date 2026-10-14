@@ -36,6 +36,10 @@ class FieldsEditPageModel : ViewModel() {
                 },
             )
         }
+        viewModelScope.launchOnDefault {
+            val target = if (field.id.isEmpty()) FieldsEditEffect.FocusTarget.Name else FieldsEditEffect.FocusTarget.Value
+            _effect.send(FieldsEditEffect.RequestFocus(target))
+        }
     }
 
     fun dispatch(action: FieldsEditUserAction) {
