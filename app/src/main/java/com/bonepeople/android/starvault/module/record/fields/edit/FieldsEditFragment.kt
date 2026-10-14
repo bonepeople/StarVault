@@ -34,7 +34,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
@@ -89,6 +91,22 @@ class FieldsEditFragment : BaseFragment() {
         val valueFocusRequester = remember { FocusRequester() }
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
+        var valueFieldValue by remember {
+            mutableStateOf(
+                TextFieldValue(
+                    text = uiState.value,
+                    selection = TextRange(uiState.value.length),
+                ),
+            )
+        }
+        LaunchedEffect(uiState.value) {
+            if (valueFieldValue.text != uiState.value) {
+                valueFieldValue = TextFieldValue(
+                    text = uiState.value,
+                    selection = TextRange(uiState.value.length),
+                )
+            }
+        }
         LaunchedEffect(focusTarget) {
             when (focusTarget) {
                 FieldsEditEffect.FocusTarget.Name -> nameFocusRequester.requestFocus()
@@ -129,8 +147,11 @@ class FieldsEditFragment : BaseFragment() {
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
-                value = uiState.value,
-                onValueChange = { action(FieldsEditUserAction.UpdateValue(it)) },
+                value = valueFieldValue,
+                onValueChange = {
+                    valueFieldValue = it
+                    action(FieldsEditUserAction.UpdateValue(it.text))
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(valueFocusRequester),
