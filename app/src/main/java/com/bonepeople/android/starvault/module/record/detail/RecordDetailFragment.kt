@@ -42,7 +42,6 @@ import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.fields.edit.FieldsEditFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
 import com.bonepeople.android.starvault.ui.component.RecordTag
-import com.bonepeople.android.widget.util.AppGson
 
 class RecordDetailFragment : BaseFragment() {
     private val viewModel: RecordDetailPageModel by viewModels()
@@ -75,10 +74,11 @@ class RecordDetailFragment : BaseFragment() {
 
     private fun openFieldsEdit(field: VaultFieldInfo) {
         StandardActivity.call(FieldsEditFragment.newInstance(field)).onSuccess { intent ->
-            val fieldJson = intent?.getStringExtra(FieldsEditFragment.EXTRA_FIELD_JSON) ?: return@onSuccess
-            val resultField = runCatching { AppGson.toObject<VaultFieldInfo>(fieldJson) }.getOrNull() ?: return@onSuccess
-            viewModel.dispatch(RecordDetailUserAction.FieldSaved(resultField))
-            requireActivity().setResult(Activity.RESULT_OK)
+            FieldsEditFragment.parseResult(
+                intent = intent,
+                onSaved = { viewModel.dispatch(RecordDetailUserAction.FieldSaved(it)) },
+                onDeleted = { viewModel.dispatch(RecordDetailUserAction.FieldDeleted(it)) },
+            )
         }
     }
 

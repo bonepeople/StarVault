@@ -11,6 +11,8 @@ sealed interface RecordDetailUserAction {
     data class ClickField(val fieldId: String) : RecordDetailUserAction
     // 字段编辑页返回后更新页面字段
     data class FieldSaved(val field: VaultFieldInfo) : RecordDetailUserAction
+    // 字段编辑页返回删除的字段 ID
+    data class FieldDeleted(val fieldId: String) : RecordDetailUserAction
     // 标签编辑页返回后回写标签
     data class TagsUpdated(val tags: List<String>) : RecordDetailUserAction
 }

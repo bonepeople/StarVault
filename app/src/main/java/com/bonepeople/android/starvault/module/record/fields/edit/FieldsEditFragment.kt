@@ -64,6 +64,7 @@ class FieldsEditFragment : BaseFragment() {
             when (effect) {
                 is FieldsEditEffect.RequestFocus -> focusTarget = effect.target
                 is FieldsEditEffect.FinishSaved -> finishSaved(effect.field)
+                is FieldsEditEffect.FinishDeleted -> finishDeleted(effect.fieldId)
             }
         }
 
@@ -75,8 +76,16 @@ class FieldsEditFragment : BaseFragment() {
     }
 
     private fun finishSaved(field: VaultFieldInfo) {
-        val result = Intent().putExtra(EXTRA_FIELD_JSON, AppGson.toJson(field))
-        requireActivity().setResult(Activity.RESULT_OK, result)
+        finishWithResult(FieldsEditResult(type = FieldsEditResult.TYPE_SAVED, savedField = field))
+    }
+
+    private fun finishDeleted(fieldId: String) {
+        finishWithResult(FieldsEditResult(type = FieldsEditResult.TYPE_DELETED, deletedFieldId = fieldId))
+    }
+
+    private fun finishWithResult(result: FieldsEditResult) {
+        val intent = Intent().putExtra(EXTRA_RESULT_JSON, AppGson.toJson(result))
+        requireActivity().setResult(Activity.RESULT_OK, intent)
         requireActivity().finishAfterTransition()
     }
 
@@ -178,6 +187,13 @@ class FieldsEditFragment : BaseFragment() {
             ) {
                 Text(text = "确认")
             }
+            if (uiState.id.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                HoldToDeleteButton.Content(
+                    onHoldComplete = { action(FieldsEditUserAction.ClickDelete) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             if (uiState.history.isNotEmpty()) {
                 Spacer(Modifier.height(24.dp))
                 Text(
@@ -224,8 +240,26 @@ class FieldsEditFragment : BaseFragment() {
     }
 
     companion object {
-        const val EXTRA_FIELD_JSON = "field_json"
+        private const val EXTRA_RESULT_JSON = "result_json"
         private const val ARG_FIELD_JSON = "field_json"
+
+        fun parseResult(
+            intent: Intent?,
+            onSaved: (VaultFieldInfo) -> Unit,
+            onDeleted: (String) -> Unit,
+        ) {
+            val json = intent?.getStringExtra(EXTRA_RESULT_JSON) ?: return
+            val result = runCatching { AppGson.toObject<FieldsEditResult>(json) }.getOrNull() ?: return
+            when (result.type) {
+                FieldsEditResult.TYPE_SAVED -> {
+                    onSaved(result.savedField)
+                }
+
+                FieldsEditResult.TYPE_DELETED -> {
+                    onDeleted(result.deletedFieldId)
+                }
+            }
+        }
 
         fun newInstance(field: VaultFieldInfo): FieldsEditFragment {
             return FieldsEditFragment().apply {

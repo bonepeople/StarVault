@@ -47,6 +47,7 @@ class FieldsEditPageModel : ViewModel() {
             is FieldsEditUserAction.UpdateName -> onNameUpdated(action.name)
             is FieldsEditUserAction.UpdateValue -> onValueUpdated(action.value)
             FieldsEditUserAction.ClickConfirm -> onConfirmClicked()
+            FieldsEditUserAction.ClickDelete -> onDeleteClicked()
         }
     }
 
@@ -82,6 +83,14 @@ class FieldsEditPageModel : ViewModel() {
     private fun finishSaved(field: VaultFieldInfo) {
         viewModelScope.launchOnDefault {
             _effect.send(FieldsEditEffect.FinishSaved(field))
+        }
+    }
+
+    private fun onDeleteClicked() {
+        val fieldId = uiState.value.id
+        if (fieldId.isEmpty()) return
+        viewModelScope.launchOnDefault {
+            _effect.send(FieldsEditEffect.FinishDeleted(fieldId))
         }
     }
 }
