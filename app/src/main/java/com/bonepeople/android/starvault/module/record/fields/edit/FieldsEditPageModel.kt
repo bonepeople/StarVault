@@ -26,7 +26,7 @@ class FieldsEditPageModel : ViewModel() {
         uiState.update {
             it.copy(
                 id = field.id,
-                name = current?.name.orEmpty(),
+                name = field.name,
                 value = current?.value.orEmpty(),
                 history = field.snapshotList.drop(1).map { snapshot ->
                     FieldsEditState.HistoryItem(
@@ -68,15 +68,14 @@ class FieldsEditPageModel : ViewModel() {
             uiState.update { it.copy(nameError = nameError, valueError = valueError) }
             return
         }
-        val snapshot = VaultFieldSnapshotInfo(
-            name = name,
-            value = value,
-            createTimestamp = System.currentTimeMillis(),
-        )
-        val field = VaultFieldInfo(
-            id = uiState.value.id.ifEmpty { UUID.randomUUID().toString() },
-            snapshotList = listOf(snapshot) + initialField.snapshotList,
-        )
+        val current = initialField.snapshotList.firstOrNull()
+        val snapshotList = if (current != null && current.value == value) {
+            initialField.snapshotList
+        } else {
+            val snapshot = VaultFieldSnapshotInfo(value = value, createTimestamp = System.currentTimeMillis())
+            listOf(snapshot) + initialField.snapshotList
+        }
+        val field = VaultFieldInfo(id = uiState.value.id.ifEmpty { UUID.randomUUID().toString() }, name = name, snapshotList = snapshotList)
         finishSaved(field)
     }
 

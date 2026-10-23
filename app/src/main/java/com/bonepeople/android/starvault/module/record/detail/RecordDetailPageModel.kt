@@ -104,7 +104,7 @@ class RecordDetailPageModel : ViewModel() {
         val current = snapshotList.firstOrNull()
         return RecordDetailState.Field(
             id = id,
-            name = current?.name.orEmpty().ifEmpty { "未命名" },
+            name = name.ifEmpty { "未命名" },
             currentValue = current?.value.orEmpty(),
         )
     }
