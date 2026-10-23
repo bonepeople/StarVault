@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
-import com.bonepeople.android.widget.util.AppToast
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -75,7 +74,9 @@ class RecordDetailPageModel : ViewModel() {
 
     private fun onFieldDeleted(fieldId: String) {
         if (recordFields.none { it.id == fieldId }) return
-        AppToast.show("已删除字段")
+        recordFields = recordFields.filterNot { it.id == fieldId }
+        uiState.update { it.copy(fields = recordFields.map { item -> item.toStateField() }) }
+        VaultManager.deleteRecordField(recordId, fieldId)
     }
 
     private fun loadRecord() {

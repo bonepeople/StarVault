@@ -40,6 +40,22 @@ object VaultManager {
         )
     }
 
+    fun deleteRecordField(recordId: String, fieldId: String) {
+        val record = findRecordById(recordId) ?: return
+        if (record.fieldList.none { it.id == fieldId }) return
+        updateVault(
+            currentVault.copy(
+                recordList = currentVault.recordList.map { item ->
+                    if (item.id == recordId) {
+                        item.copy(fieldList = item.fieldList.filterNot { it.id == fieldId })
+                    } else {
+                        item
+                    }
+                },
+            ),
+        )
+    }
+
     fun generateFakeVault() {
         updateVault(VaultInfo(
             id = UUID.randomUUID().toString(),
