@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
+import com.bonepeople.android.starvault.ui.component.HoldToDeleteButton
 import com.bonepeople.android.widget.util.AppGson
 import com.bonepeople.android.widget.util.AppTime
 
@@ -190,6 +191,7 @@ class FieldsEditFragment : BaseFragment() {
             if (uiState.id.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 HoldToDeleteButton.Content(
+                    text = "删除字段",
                     onHoldComplete = { action(FieldsEditUserAction.ClickDelete) },
                     modifier = Modifier.fillMaxWidth(),
                 )

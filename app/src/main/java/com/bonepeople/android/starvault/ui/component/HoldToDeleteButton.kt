@@ -1,4 +1,4 @@
-package com.bonepeople.android.starvault.module.record.fields.edit
+package com.bonepeople.android.starvault.ui.component
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -35,9 +35,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-internal object HoldToDeleteButton {
+object HoldToDeleteButton {
     @Composable
-    fun Content(onHoldComplete: () -> Unit, modifier: Modifier = Modifier) {
+    fun Content(text: String, onHoldComplete: () -> Unit, modifier: Modifier = Modifier) {
         val interactionSource = remember { MutableInteractionSource() }
         val progress = remember { Animatable(0f) }
         val currentOnHoldComplete by rememberUpdatedState(onHoldComplete)
@@ -119,7 +119,7 @@ internal object HoldToDeleteButton {
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "删除字段",
+                    text = text,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.error,
                 )

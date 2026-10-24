@@ -41,6 +41,7 @@ import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.fields.edit.FieldsEditFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
+import com.bonepeople.android.starvault.ui.component.HoldToDeleteButton
 import com.bonepeople.android.starvault.ui.component.RecordTag
 
 class RecordDetailFragment : BaseFragment() {
@@ -147,6 +148,15 @@ class RecordDetailFragment : BaseFragment() {
                         }
                         item(key = "ADD_FIELD", contentType = "CONTENT_TYPE_ADD_FIELD_ITEM") {
                             AddFieldRow(onClick = { action(RecordDetailUserAction.ClickAddField) })
+                        }
+                        item(key = "DELETE_RECORD", contentType = "CONTENT_TYPE_DELETE_RECORD") {
+                            HoldToDeleteButton.Content(
+                                text = "删除记录",
+                                onHoldComplete = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                            )
                         }
                     }
                 }
