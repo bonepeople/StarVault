@@ -33,6 +33,7 @@ class RecordDetailPageModel : ViewModel() {
             is RecordDetailUserAction.FieldSaved -> onFieldSaved(action.field)
             is RecordDetailUserAction.FieldDeleted -> onFieldDeleted(action.fieldId)
             is RecordDetailUserAction.TagsUpdated -> onTagsUpdated(action.tags)
+            RecordDetailUserAction.ClickDelete -> onDeleteClicked()
         }
     }
 
@@ -70,6 +71,14 @@ class RecordDetailPageModel : ViewModel() {
         }
         uiState.update { it.copy(fields = recordFields.map { item -> item.toStateField() }) }
         VaultManager.updateRecordFields(recordId, recordFields)
+    }
+
+    private fun onDeleteClicked() {
+        if (VaultManager.findRecordById(recordId) == null) return
+        VaultManager.deleteRecord(recordId)
+        viewModelScope.launchOnDefault {
+            _effect.send(RecordDetailEffect.FinishDeleted)
+        }
     }
 
     private fun onFieldDeleted(fieldId: String) {

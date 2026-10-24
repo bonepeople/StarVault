@@ -58,6 +58,7 @@ class RecordDetailFragment : BaseFragment() {
             when (effect) {
                 is RecordDetailEffect.OpenTagsEdit -> openTagsEdit(effect.tags)
                 is RecordDetailEffect.OpenFieldsEdit -> openFieldsEdit(effect.field)
+                RecordDetailEffect.FinishDeleted -> finishDeleted()
             }
         }
         val recordId = requireArguments().getString(ARG_RECORD_ID).orEmpty()
@@ -71,6 +72,11 @@ class RecordDetailFragment : BaseFragment() {
             viewModel.dispatch(RecordDetailUserAction.TagsUpdated(resultTags))
             requireActivity().setResult(Activity.RESULT_OK)
         }
+    }
+
+    private fun finishDeleted() {
+        requireActivity().setResult(Activity.RESULT_OK)
+        requireActivity().finishAfterTransition()
     }
 
     private fun openFieldsEdit(field: VaultFieldInfo) {
@@ -152,7 +158,7 @@ class RecordDetailFragment : BaseFragment() {
                         item(key = "DELETE_RECORD", contentType = "CONTENT_TYPE_DELETE_RECORD") {
                             HoldToDeleteButton.Content(
                                 text = "删除记录",
-                                onHoldComplete = {},
+                                onHoldComplete = { action(RecordDetailUserAction.ClickDelete) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 16.dp),

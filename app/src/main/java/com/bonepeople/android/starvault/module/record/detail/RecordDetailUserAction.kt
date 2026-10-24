@@ -15,4 +15,6 @@ sealed interface RecordDetailUserAction {
     data class FieldDeleted(val fieldId: String) : RecordDetailUserAction
     // 标签编辑页返回后回写标签
     data class TagsUpdated(val tags: List<String>) : RecordDetailUserAction
+    // 用户长按完成删除记录
+    object ClickDelete : RecordDetailUserAction
 }
