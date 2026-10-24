@@ -111,9 +111,10 @@ class RecordDetailPageModel : ViewModel() {
 
     private fun VaultFieldInfo.toStateField(): RecordDetailState.Field {
         val current = snapshotList.firstOrNull()
+        val definitionName = VaultManager.findFieldDefinitionById(definitionId)?.name.orEmpty()
         return RecordDetailState.Field(
             id = id,
-            name = name.ifEmpty { "未命名" },
+            name = definitionName.ifEmpty { "未命名" },
             currentValue = current?.value.orEmpty(),
         )
     }

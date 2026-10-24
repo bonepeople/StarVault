@@ -1,5 +1,6 @@
 package com.bonepeople.android.starvault.global
 
+import com.bonepeople.android.starvault.global.data.VaultFieldDefinitionInfo
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.starvault.global.data.VaultFieldSnapshotInfo
 import com.bonepeople.android.starvault.global.data.VaultInfo
@@ -14,6 +15,10 @@ object VaultManager {
 
     fun findRecordById(recordId: String): VaultRecordInfo? {
         return currentVault.recordList.find { it.id == recordId }
+    }
+
+    fun findFieldDefinitionById(definitionId: String): VaultFieldDefinitionInfo? {
+        return currentVault.fieldDefinitionList.find { it.id == definitionId }
     }
 
     fun addRecord(record: VaultRecordInfo) {
@@ -62,10 +67,58 @@ object VaultManager {
     }
 
     fun generateFakeVault() {
+        val fieldDefinitionList = listOf(
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "用户名",
+                description = "用于登录的账号名称",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "邮箱",
+                description = "用于接收验证邮件",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "密码",
+                description = "用于登录的密码",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "2FA 密钥",
+                description = "用于双重认证的一次性密钥",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "备注",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "SSID",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "路由器地址",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "管理 PIN",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "运营商账号",
+            ),
+            VaultFieldDefinitionInfo(
+                id = UUID.randomUUID().toString(),
+                name = "客服电话",
+            ),
+        )
+        val fieldDefinitionIdMap = fieldDefinitionList.associate { it.name to it.id }
         updateVault(VaultInfo(
             id = UUID.randomUUID().toString(),
             name = "演示保险库",
             description = "用于 UI 与逻辑测试的示例数据",
+            fieldDefinitionList = fieldDefinitionList,
             recordList = listOf(
                 VaultRecordInfo(
                     id = UUID.randomUUID().toString(),
@@ -74,21 +127,21 @@ object VaultManager {
                     fieldList = listOf(
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "用户名",
+                            definitionId = fieldDefinitionIdMap.getValue("用户名"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "bonepeople", createTimestamp = 1_767_168_000_000L), // 2026-01-01
                             ),
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "邮箱",
+                            definitionId = fieldDefinitionIdMap.getValue("邮箱"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "dev@example.com", createTimestamp = 1_767_168_000_000L),
                             ),
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "密码",
+                            definitionId = fieldDefinitionIdMap.getValue("密码"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "P@ssw0rd_2026!", createTimestamp = 1_767_168_000_000L), // 2026-01-01
                                 VaultFieldSnapshotInfo(value = "TmpP@ss2025", createTimestamp = 1_758_355_200_000L), // 2025-09-20
@@ -98,14 +151,14 @@ object VaultManager {
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "2FA 密钥",
+                            definitionId = fieldDefinitionIdMap.getValue("2FA 密钥"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "JBSWY3DPEHPK3PXP", createTimestamp = 1_767_168_000_000L),
                             ),
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "备注",
+                            definitionId = fieldDefinitionIdMap.getValue("备注"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "主账号，绑定 YubiKey", createTimestamp = 1_767_168_000_000L),
                             ),
@@ -119,14 +172,14 @@ object VaultManager {
                     fieldList = listOf(
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "SSID",
+                            definitionId = fieldDefinitionIdMap.getValue("SSID"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "StarHome_5G", createTimestamp = 1_767_168_000_000L),
                             ),
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "密码",
+                            definitionId = fieldDefinitionIdMap.getValue("密码"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "wifi-secret-88", createTimestamp = 1_767_168_000_000L), // 2026-01-01
                                 VaultFieldSnapshotInfo(value = "router-2024", createTimestamp = 1_723_267_200_000L), // 2024-08-10
@@ -135,28 +188,28 @@ object VaultManager {
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "路由器地址",
+                            definitionId = fieldDefinitionIdMap.getValue("路由器地址"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "192.168.1.1", createTimestamp = 1_767_168_000_000L),
                             ),
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "管理 PIN",
+                            definitionId = fieldDefinitionIdMap.getValue("管理 PIN"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "12345678", createTimestamp = 1_767_168_000_000L),
                             ),
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "运营商账号",
+                            definitionId = fieldDefinitionIdMap.getValue("运营商账号"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "fiber@isp.example", createTimestamp = 1_767_168_000_000L),
                             ),
                         ),
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
-                            name = "客服电话",
+                            definitionId = fieldDefinitionIdMap.getValue("客服电话"),
                             snapshotList = listOf(
                                 VaultFieldSnapshotInfo(value = "10086", createTimestamp = 1_767_168_000_000L),
                             ),

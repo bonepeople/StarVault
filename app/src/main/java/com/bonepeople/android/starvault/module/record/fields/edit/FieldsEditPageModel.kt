@@ -3,6 +3,7 @@ package com.bonepeople.android.starvault.module.record.fields.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
+import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.starvault.global.data.VaultFieldSnapshotInfo
 import kotlinx.coroutines.channels.Channel
@@ -23,10 +24,11 @@ class FieldsEditPageModel : ViewModel() {
         initialized = true
         initialField = field
         val current = field.snapshotList.firstOrNull()
+        val definitionName = VaultManager.findFieldDefinitionById(field.definitionId)?.name.orEmpty()
         uiState.update {
             it.copy(
                 id = field.id,
-                name = field.name,
+                name = definitionName,
                 value = current?.value.orEmpty(),
                 history = field.snapshotList.drop(1).map { snapshot ->
                     FieldsEditState.HistoryItem(
@@ -75,7 +77,11 @@ class FieldsEditPageModel : ViewModel() {
             val snapshot = VaultFieldSnapshotInfo(value = value, createTimestamp = System.currentTimeMillis())
             listOf(snapshot) + initialField.snapshotList
         }
-        val field = VaultFieldInfo(id = uiState.value.id.ifEmpty { UUID.randomUUID().toString() }, name = name, snapshotList = snapshotList)
+        val field = VaultFieldInfo(
+            id = uiState.value.id.ifEmpty { UUID.randomUUID().toString() },
+            definitionId = initialField.definitionId,
+            snapshotList = snapshotList,
+        )
         finishSaved(field)
     }
 
