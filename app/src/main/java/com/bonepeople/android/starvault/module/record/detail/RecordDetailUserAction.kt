@@ -7,6 +7,8 @@ sealed interface RecordDetailUserAction {
     object ClickTags : RecordDetailUserAction
     // 用户点击添加字段
     object ClickAddField : RecordDetailUserAction
+    // 字段定义选择页返回选中的定义 ID
+    data class FieldDefinitionSelected(val definitionId: String) : RecordDetailUserAction
     // 用户点击已有字段
     data class ClickField(val fieldId: String) : RecordDetailUserAction
     // 字段编辑页返回后更新页面字段

@@ -97,7 +97,6 @@ class FieldsEditFragment : BaseFragment() {
         focusTarget: FieldsEditEffect.FocusTarget? = null,
         action: (FieldsEditUserAction) -> Unit = {},
     ) {
-        val nameFocusRequester = remember { FocusRequester() }
         val valueFocusRequester = remember { FocusRequester() }
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
@@ -119,7 +118,6 @@ class FieldsEditFragment : BaseFragment() {
         }
         LaunchedEffect(focusTarget) {
             when (focusTarget) {
-                FieldsEditEffect.FocusTarget.Name -> nameFocusRequester.requestFocus()
                 FieldsEditEffect.FocusTarget.Value -> valueFocusRequester.requestFocus()
                 null -> return@LaunchedEffect
             }
@@ -140,20 +138,11 @@ class FieldsEditFragment : BaseFragment() {
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = uiState.name,
-                onValueChange = { action(FieldsEditUserAction.UpdateName(it)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(nameFocusRequester),
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
                 label = { Text(text = "信息类型") },
-                isError = uiState.nameError.isNotEmpty(),
-                supportingText = if (uiState.nameError.isNotEmpty()) {
-                    { Text(text = uiState.nameError) }
-                } else {
-                    null
-                },
+                readOnly = true,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { valueFocusRequester.requestFocus() }),
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
@@ -167,10 +156,16 @@ class FieldsEditFragment : BaseFragment() {
                     .focusRequester(valueFocusRequester),
                 label = { Text(text = "内容") },
                 isError = uiState.valueError.isNotEmpty(),
-                supportingText = if (uiState.valueError.isNotEmpty()) {
-                    { Text(text = uiState.valueError) }
-                } else {
-                    null
+                supportingText = when {
+                    uiState.valueError.isNotEmpty() -> {
+                        { Text(text = uiState.valueError) }
+                    }
+
+                    uiState.description.isNotEmpty() -> {
+                        { Text(text = uiState.description) }
+                    }
+
+                    else -> null
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),

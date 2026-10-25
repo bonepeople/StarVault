@@ -1,0 +1,6 @@
+package com.bonepeople.android.starvault.module.record.fields.select
+
+sealed interface FieldsSelectEffect {
+    // 返回选中的字段定义 ID 并关闭选择页
+    data class FinishSelected(val definitionId: String) : FieldsSelectEffect
+}

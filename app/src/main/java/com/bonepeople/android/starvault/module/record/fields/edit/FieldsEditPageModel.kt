@@ -21,14 +21,15 @@ class FieldsEditPageModel : ViewModel() {
 
     fun init(field: VaultFieldInfo) {
         if (initialized) return
+        val definition = VaultManager.findFieldDefinitionById(field.definitionId) ?: return
         initialized = true
         initialField = field
         val current = field.snapshotList.firstOrNull()
-        val definitionName = VaultManager.findFieldDefinitionById(field.definitionId)?.name.orEmpty()
         uiState.update {
             it.copy(
                 id = field.id,
-                name = definitionName,
+                name = definition.name,
+                description = definition.description,
                 value = current?.value.orEmpty(),
                 history = field.snapshotList.drop(1).map { snapshot ->
                     FieldsEditState.HistoryItem(
@@ -39,22 +40,16 @@ class FieldsEditPageModel : ViewModel() {
             )
         }
         viewModelScope.launchOnDefault {
-            val target = if (field.id.isEmpty()) FieldsEditEffect.FocusTarget.Name else FieldsEditEffect.FocusTarget.Value
-            _effect.send(FieldsEditEffect.RequestFocus(target))
+            _effect.send(FieldsEditEffect.RequestFocus(FieldsEditEffect.FocusTarget.Value))
         }
     }
 
     fun dispatch(action: FieldsEditUserAction) {
         when (action) {
-            is FieldsEditUserAction.UpdateName -> onNameUpdated(action.name)
             is FieldsEditUserAction.UpdateValue -> onValueUpdated(action.value)
             FieldsEditUserAction.ClickConfirm -> onConfirmClicked()
             FieldsEditUserAction.ClickDelete -> onDeleteClicked()
         }
-    }
-
-    private fun onNameUpdated(name: String) {
-        uiState.update { it.copy(name = name, nameError = "") }
     }
 
     private fun onValueUpdated(value: String) {
@@ -62,12 +57,10 @@ class FieldsEditPageModel : ViewModel() {
     }
 
     private fun onConfirmClicked() {
-        val name = uiState.value.name.trim()
         val value = uiState.value.value.trim()
-        val nameError = if (name.isEmpty()) "请输入信息类型" else ""
         val valueError = if (value.isEmpty()) "请输入内容" else ""
-        if (nameError.isNotEmpty() || valueError.isNotEmpty()) {
-            uiState.update { it.copy(nameError = nameError, valueError = valueError) }
+        if (valueError.isNotEmpty()) {
+            uiState.update { it.copy(valueError = valueError) }
             return
         }
         val current = initialField.snapshotList.firstOrNull()

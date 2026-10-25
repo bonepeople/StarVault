@@ -40,6 +40,7 @@ import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.fields.edit.FieldsEditFragment
+import com.bonepeople.android.starvault.module.record.fields.select.FieldsSelectFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
 import com.bonepeople.android.starvault.ui.component.HoldToDeleteButton
 import com.bonepeople.android.starvault.ui.component.RecordTag
@@ -57,6 +58,7 @@ class RecordDetailFragment : BaseFragment() {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
                 is RecordDetailEffect.OpenTagsEdit -> openTagsEdit(effect.tags)
+                is RecordDetailEffect.OpenFieldsSelect -> openFieldsSelect(effect.usedDefinitionIds)
                 is RecordDetailEffect.OpenFieldsEdit -> openFieldsEdit(effect.field)
                 RecordDetailEffect.FinishDeleted -> finishDeleted()
             }
@@ -83,9 +85,22 @@ class RecordDetailFragment : BaseFragment() {
         StandardActivity.call(FieldsEditFragment.newInstance(field)).onSuccess { intent ->
             FieldsEditFragment.parseResult(
                 intent = intent,
-                onSaved = { viewModel.dispatch(RecordDetailUserAction.FieldSaved(it)) },
-                onDeleted = { viewModel.dispatch(RecordDetailUserAction.FieldDeleted(it)) },
+                onSaved = {
+                    viewModel.dispatch(RecordDetailUserAction.FieldSaved(it))
+                    requireActivity().setResult(Activity.RESULT_OK)
+                },
+                onDeleted = {
+                    viewModel.dispatch(RecordDetailUserAction.FieldDeleted(it))
+                    requireActivity().setResult(Activity.RESULT_OK)
+                },
             )
+        }
+    }
+
+    private fun openFieldsSelect(usedDefinitionIds: List<String>) {
+        StandardActivity.call(FieldsSelectFragment.newInstance(usedDefinitionIds)).onSuccess { intent ->
+            val definitionId = FieldsSelectFragment.parseResult(intent) ?: return@onSuccess
+            viewModel.dispatch(RecordDetailUserAction.FieldDefinitionSelected(definitionId))
         }
     }
 

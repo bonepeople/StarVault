@@ -6,6 +6,7 @@ import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -29,6 +30,7 @@ class RecordDetailPageModel : ViewModel() {
         when (action) {
             RecordDetailUserAction.ClickTags -> onTagsClicked()
             RecordDetailUserAction.ClickAddField -> onAddFieldClicked()
+            is RecordDetailUserAction.FieldDefinitionSelected -> onFieldDefinitionSelected(action.definitionId)
             is RecordDetailUserAction.ClickField -> onFieldClicked(action.fieldId)
             is RecordDetailUserAction.FieldSaved -> onFieldSaved(action.field)
             is RecordDetailUserAction.FieldDeleted -> onFieldDeleted(action.fieldId)
@@ -45,7 +47,18 @@ class RecordDetailPageModel : ViewModel() {
 
     private fun onAddFieldClicked() {
         viewModelScope.launchOnDefault {
-            _effect.send(RecordDetailEffect.OpenFieldsEdit(VaultFieldInfo()))
+            _effect.send(RecordDetailEffect.OpenFieldsSelect(recordFields.map { it.definitionId }))
+        }
+    }
+
+    private fun onFieldDefinitionSelected(definitionId: String) {
+        if (definitionId.isEmpty()) return
+        if (recordFields.any { it.definitionId == definitionId }) return
+        if (VaultManager.findFieldDefinitionById(definitionId) == null) return
+        viewModelScope.launchOnDefault {
+            // TODO: StandardActivity.call会使用正在关闭的页面打开编辑页，添加延迟等待页面完全关闭后再调用，AndroidWidget1.7.7版本会解决
+            delay(600)
+            _effect.send(RecordDetailEffect.OpenFieldsEdit(VaultFieldInfo(definitionId = definitionId)))
         }
     }
 
@@ -63,6 +76,7 @@ class RecordDetailPageModel : ViewModel() {
 
     private fun onFieldSaved(field: VaultFieldInfo) {
         if (field.id.isEmpty() || field.snapshotList.isEmpty()) return
+        if (VaultManager.findFieldDefinitionById(field.definitionId) == null) return
         val fieldExists = recordFields.any { it.id == field.id }
         recordFields = if (fieldExists) {
             recordFields.map { if (it.id == field.id) field else it }

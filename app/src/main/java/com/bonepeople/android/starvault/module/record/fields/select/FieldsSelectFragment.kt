@@ -1,5 +1,7 @@
 package com.bonepeople.android.starvault.module.record.fields.select
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,8 +33,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 
 class FieldsSelectFragment : BaseFragment() {
     private val viewModel: FieldsSelectPageModel by viewModels()
@@ -44,8 +49,19 @@ class FieldsSelectFragment : BaseFragment() {
     }
 
     override fun initData(savedInstanceState: Bundle?) {
+        viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
+            when (effect) {
+                is FieldsSelectEffect.FinishSelected -> finishSelected(effect.definitionId)
+            }
+        }
         val usedDefinitionIds = requireArguments().getStringArrayList(ARG_USED_DEFINITION_IDS).orEmpty()
         viewModel.init(usedDefinitionIds)
+    }
+
+    private fun finishSelected(definitionId: String) {
+        val intent = Intent().putExtra(EXTRA_DEFINITION_ID, definitionId)
+        requireActivity().setResult(Activity.RESULT_OK, intent)
+        requireActivity().finishAfterTransition()
     }
 
     @Preview(showSystemUi = true)
@@ -105,7 +121,10 @@ class FieldsSelectFragment : BaseFragment() {
                         key = { it.id },
                         contentType = { "CONTENT_TYPE_FIELD_DEFINITION_ITEM" },
                     ) { item ->
-                        ItemRow(item = item)
+                        ItemRow(
+                            item = item,
+                            onClick = { action(FieldsSelectUserAction.ClickItem(item.id)) },
+                        )
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                         )
@@ -118,11 +137,13 @@ class FieldsSelectFragment : BaseFragment() {
     @Composable
     private fun ItemRow(
         item: FieldsSelectState.Item,
+        onClick: () -> Unit,
         modifier: Modifier = Modifier,
     ) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
+                .singleClick(onClick = onClick)
                 .padding(horizontal = 4.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -146,7 +167,12 @@ class FieldsSelectFragment : BaseFragment() {
     }
 
     companion object {
+        private const val EXTRA_DEFINITION_ID = "definition_id"
         private const val ARG_USED_DEFINITION_IDS = "used_definition_ids"
+
+        fun parseResult(intent: Intent?): String? {
+            return intent?.getStringExtra(EXTRA_DEFINITION_ID)?.takeIf { it.isNotEmpty() }
+        }
 
         fun newInstance(usedDefinitionIds: List<String>): FieldsSelectFragment {
             return FieldsSelectFragment().apply {

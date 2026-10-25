@@ -7,10 +7,10 @@ data class FieldsEditState(
     val id: String = "",
     @SerializedName("name")
     val name: String = "",
+    @SerializedName("description")
+    val description: String = "",
     @SerializedName("value")
     val value: String = "",
-    @SerializedName("nameError")
-    val nameError: String = "",
     @SerializedName("valueError")
     val valueError: String = "",
     @SerializedName("history")
@@ -30,6 +30,7 @@ data class FieldsEditState(
         val Normal = FieldsEditState(
             id = "field-id",
             name = "用户名",
+            description = "用于登录的账号名称",
             value = "bonepeople",
             history = listOf(
                 HistoryItem(value = "bonepeople_2025", createTimestamp = 1_758_355_200_000L),
@@ -37,7 +38,7 @@ data class FieldsEditState(
             ),
         )
 
-        val WithError = FieldsEditState(nameError = "请输入信息类型", valueError = "请输入内容")
+        val WithError = FieldsEditState(valueError = "请输入内容")
     }
 
     companion object {

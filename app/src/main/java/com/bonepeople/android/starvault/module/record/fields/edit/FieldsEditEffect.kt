@@ -11,7 +11,6 @@ sealed interface FieldsEditEffect {
     data class FinishDeleted(val fieldId: String) : FieldsEditEffect
 
     enum class FocusTarget {
-        Name,
         Value,
     }
 }

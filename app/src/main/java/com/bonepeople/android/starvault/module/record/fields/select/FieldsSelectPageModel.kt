@@ -6,12 +6,16 @@ import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.util.FieldDefinitionUtil
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
 class FieldsSelectPageModel : ViewModel() {
     val uiState: MutableStateFlow<FieldsSelectState> = MutableStateFlow(FieldsSelectState.Default)
+    private val _effect = Channel<FieldsSelectEffect>(capacity = Channel.UNLIMITED)
+    val effect = _effect.receiveAsFlow()
     private var initialized = false
     private var availableItems: List<FieldsSelectState.Item> = emptyList()
     private var updateItemsJob: Job? = null
@@ -50,6 +54,13 @@ class FieldsSelectPageModel : ViewModel() {
     fun dispatch(action: FieldsSelectUserAction) {
         when (action) {
             is FieldsSelectUserAction.UpdateQuery -> onQueryUpdated(action.query)
+            is FieldsSelectUserAction.ClickItem -> onItemClicked(action.definitionId)
+        }
+    }
+
+    private fun onItemClicked(definitionId: String) {
+        viewModelScope.launchOnDefault {
+            _effect.send(FieldsSelectEffect.FinishSelected(definitionId))
         }
     }
 
