@@ -133,7 +133,7 @@ class FieldsEditFragment : BaseFragment() {
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
             Text(
-                text = if (uiState.id.isEmpty()) "添加字段" else "编辑字段",
+                text = if (uiState.id.isEmpty()) "添加信息项" else "编辑信息项",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -144,7 +144,7 @@ class FieldsEditFragment : BaseFragment() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(nameFocusRequester),
-                label = { Text(text = "字段名称") },
+                label = { Text(text = "信息类型") },
                 isError = uiState.nameError.isNotEmpty(),
                 supportingText = if (uiState.nameError.isNotEmpty()) {
                     { Text(text = uiState.nameError) }
@@ -165,7 +165,7 @@ class FieldsEditFragment : BaseFragment() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(valueFocusRequester),
-                label = { Text(text = "字段值") },
+                label = { Text(text = "内容") },
                 isError = uiState.valueError.isNotEmpty(),
                 supportingText = if (uiState.valueError.isNotEmpty()) {
                     { Text(text = uiState.valueError) }
@@ -191,7 +191,7 @@ class FieldsEditFragment : BaseFragment() {
             if (uiState.id.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 HoldToDeleteButton.Content(
-                    text = "删除字段",
+                    text = "删除信息项",
                     onHoldComplete = { action(FieldsEditUserAction.ClickDelete) },
                     modifier = Modifier.fillMaxWidth(),
                 )

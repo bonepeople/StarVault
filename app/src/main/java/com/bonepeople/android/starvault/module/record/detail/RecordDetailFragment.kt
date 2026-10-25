@@ -214,7 +214,7 @@ class RecordDetailFragment : BaseFragment() {
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "添加字段",
+                text = "添加信息项",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary,
             )

@@ -64,8 +64,8 @@ class FieldsEditPageModel : ViewModel() {
     private fun onConfirmClicked() {
         val name = uiState.value.name.trim()
         val value = uiState.value.value.trim()
-        val nameError = if (name.isEmpty()) "请输入字段名称" else ""
-        val valueError = if (value.isEmpty()) "请输入字段值" else ""
+        val nameError = if (name.isEmpty()) "请输入信息类型" else ""
+        val valueError = if (value.isEmpty()) "请输入内容" else ""
         if (nameError.isNotEmpty() || valueError.isNotEmpty()) {
             uiState.update { it.copy(nameError = nameError, valueError = valueError) }
             return

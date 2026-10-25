@@ -37,7 +37,7 @@ data class FieldsEditState(
             ),
         )
 
-        val WithError = FieldsEditState(nameError = "请输入字段名称", valueError = "请输入字段值")
+        val WithError = FieldsEditState(nameError = "请输入信息类型", valueError = "请输入内容")
     }
 
     companion object {
