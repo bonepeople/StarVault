@@ -21,6 +21,16 @@ object VaultManager {
         return currentVault.fieldDefinitionList.find { it.id == definitionId }
     }
 
+    fun createFieldDefinition(name: String, description: String): VaultFieldDefinitionInfo {
+        val definition = VaultFieldDefinitionInfo(
+            id = UUID.randomUUID().toString(),
+            name = name.trim(),
+            description = description.trim(),
+        )
+        updateVault(currentVault.copy(fieldDefinitionList = currentVault.fieldDefinitionList + definition))
+        return definition
+    }
+
     fun addRecord(record: VaultRecordInfo) {
         updateVault(currentVault.copy(recordList = currentVault.recordList + record))
     }
