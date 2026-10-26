@@ -54,7 +54,14 @@ class FieldsSelectPageModel : ViewModel() {
     fun dispatch(action: FieldsSelectUserAction) {
         when (action) {
             is FieldsSelectUserAction.UpdateQuery -> onQueryUpdated(action.query)
+            FieldsSelectUserAction.ClickCreateDefinition -> onCreateDefinitionClicked()
             is FieldsSelectUserAction.ClickItem -> onItemClicked(action.definitionId)
+        }
+    }
+
+    private fun onCreateDefinitionClicked() {
+        viewModelScope.launchOnDefault {
+            _effect.send(FieldsSelectEffect.OpenDefinitionCreate)
         }
     }
 

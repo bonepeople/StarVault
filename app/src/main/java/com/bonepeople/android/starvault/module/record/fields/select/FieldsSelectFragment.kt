@@ -14,14 +14,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,9 +38,12 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.util.ClickExtension
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
+import com.bonepeople.android.starvault.module.record.fields.definition.edit.FieldDefinitionEditFragment
 
 class FieldsSelectFragment : BaseFragment() {
     private val viewModel: FieldsSelectPageModel by viewModels()
@@ -51,11 +57,19 @@ class FieldsSelectFragment : BaseFragment() {
     override fun initData(savedInstanceState: Bundle?) {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
+                FieldsSelectEffect.OpenDefinitionCreate -> openDefinitionCreate()
                 is FieldsSelectEffect.FinishSelected -> finishSelected(effect.definitionId)
             }
         }
         val usedDefinitionIds = requireArguments().getStringArrayList(ARG_USED_DEFINITION_IDS).orEmpty()
         viewModel.init(usedDefinitionIds)
+    }
+
+    private fun openDefinitionCreate() {
+        StandardActivity.call(FieldDefinitionEditFragment.newInstance(definitionId = "")).onSuccess { intent ->
+            val definitionId = FieldDefinitionEditFragment.parseResult(intent) ?: return@onSuccess
+            finishSelected(definitionId)
+        }
     }
 
     private fun finishSelected(definitionId: String) {
@@ -95,6 +109,20 @@ class FieldsSelectFragment : BaseFragment() {
                 },
                 singleLine = true,
             )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = ClickExtension.rememberSingleClick {
+                    action(FieldsSelectUserAction.ClickCreateDefinition)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(text = "新建信息类型")
+            }
             Spacer(Modifier.height(8.dp))
             if (uiState.items.isEmpty()) {
                 Box(
