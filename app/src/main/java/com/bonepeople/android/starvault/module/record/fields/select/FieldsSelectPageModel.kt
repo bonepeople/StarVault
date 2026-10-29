@@ -17,14 +17,31 @@ class FieldsSelectPageModel : ViewModel() {
     private val _effect = Channel<FieldsSelectEffect>(capacity = Channel.UNLIMITED)
     val effect = _effect.receiveAsFlow()
     private var initialized = false
+    private var usedDefinitionIdSet: Set<String> = emptySet()
     private var availableItems: List<FieldsSelectState.Item> = emptyList()
+    private var loadItemsJob: Job? = null
     private var updateItemsJob: Job? = null
 
     fun init(usedDefinitionIds: List<String>) {
         if (initialized) return
         initialized = true
-        viewModelScope.launchOnDefault {
-            val usedDefinitionIdSet = usedDefinitionIds.toSet()
+        usedDefinitionIdSet = usedDefinitionIds.toSet()
+        loadItems()
+    }
+
+    fun dispatch(action: FieldsSelectUserAction) {
+        when (action) {
+            is FieldsSelectUserAction.UpdateQuery -> onQueryUpdated(action.query)
+            FieldsSelectUserAction.ClickCreateDefinition -> onCreateDefinitionClicked()
+            FieldsSelectUserAction.ClickManageDefinitions -> onManageDefinitionsClicked()
+            FieldsSelectUserAction.RefreshDefinitions -> loadItems()
+            is FieldsSelectUserAction.ClickItem -> onItemClicked(action.definitionId)
+        }
+    }
+
+    private fun loadItems() {
+        loadItemsJob?.cancel()
+        loadItemsJob = viewModelScope.launchOnDefault {
             val usageCountByDefinitionId = VaultManager.currentVault.recordList
                 .asSequence()
                 .flatMap { it.fieldList.asSequence() }
@@ -47,21 +64,19 @@ class FieldsSelectPageModel : ViewModel() {
                         .thenBy { it.id },
                 )
                 .toList()
-            uiState.update { it.copy(items = availableItems) }
-        }
-    }
-
-    fun dispatch(action: FieldsSelectUserAction) {
-        when (action) {
-            is FieldsSelectUserAction.UpdateQuery -> onQueryUpdated(action.query)
-            FieldsSelectUserAction.ClickCreateDefinition -> onCreateDefinitionClicked()
-            is FieldsSelectUserAction.ClickItem -> onItemClicked(action.definitionId)
+            uiState.update { state -> state.copy(items = filterItems(state.query)) }
         }
     }
 
     private fun onCreateDefinitionClicked() {
         viewModelScope.launchOnDefault {
             _effect.send(FieldsSelectEffect.OpenDefinitionCreate)
+        }
+    }
+
+    private fun onManageDefinitionsClicked() {
+        viewModelScope.launchOnDefault {
+            _effect.send(FieldsSelectEffect.OpenDefinitionManage)
         }
     }
 

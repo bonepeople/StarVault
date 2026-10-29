@@ -5,6 +5,10 @@ sealed interface FieldsSelectUserAction {
     data class UpdateQuery(val query: String) : FieldsSelectUserAction
     // 用户新建字段定义
     object ClickCreateDefinition : FieldsSelectUserAction
+    // 用户管理字段定义
+    object ClickManageDefinitions : FieldsSelectUserAction
+    // 重新读取字段定义
+    object RefreshDefinitions : FieldsSelectUserAction
     // 用户选择字段定义
     data class ClickItem(val definitionId: String) : FieldsSelectUserAction
 }

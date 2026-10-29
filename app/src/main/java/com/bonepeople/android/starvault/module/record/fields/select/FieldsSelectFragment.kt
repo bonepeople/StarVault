@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -44,6 +46,7 @@ import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.util.ClickExtension
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.fields.definition.edit.FieldDefinitionEditFragment
+import com.bonepeople.android.starvault.module.record.fields.definition.manage.FieldDefinitionManageFragment
 
 class FieldsSelectFragment : BaseFragment() {
     private val viewModel: FieldsSelectPageModel by viewModels()
@@ -58,6 +61,7 @@ class FieldsSelectFragment : BaseFragment() {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
                 FieldsSelectEffect.OpenDefinitionCreate -> openDefinitionCreate()
+                FieldsSelectEffect.OpenDefinitionManage -> openDefinitionManage()
                 is FieldsSelectEffect.FinishSelected -> finishSelected(effect.definitionId)
             }
         }
@@ -69,6 +73,12 @@ class FieldsSelectFragment : BaseFragment() {
         StandardActivity.call(FieldDefinitionEditFragment.newInstance(definitionId = "")).onSuccess { intent ->
             val definitionId = FieldDefinitionEditFragment.parseResult(intent) ?: return@onSuccess
             finishSelected(definitionId)
+        }
+    }
+
+    private fun openDefinitionManage() {
+        StandardActivity.call(FieldDefinitionManageFragment()).onResult {
+            viewModel.dispatch(FieldsSelectUserAction.RefreshDefinitions)
         }
     }
 
@@ -90,11 +100,24 @@ class FieldsSelectFragment : BaseFragment() {
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
-            Text(
-                text = "选择要添加的信息类型",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "选择要添加的信息类型",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                TextButton(
+                    onClick = ClickExtension.rememberSingleClick {
+                        action(FieldsSelectUserAction.ClickManageDefinitions)
+                    },
+                ) {
+                    Text(text = "管理")
+                }
+            }
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = uiState.query,
