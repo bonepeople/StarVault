@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
+import com.bonepeople.android.starvault.global.util.ClickExtension
 import com.bonepeople.android.starvault.ui.component.HoldToDeleteButton
 import com.bonepeople.android.widget.util.AppGson
 import com.bonepeople.android.widget.util.AppTime
@@ -178,7 +179,7 @@ class FieldsEditFragment : BaseFragment() {
             )
             Spacer(Modifier.height(16.dp))
             Button(
-                onClick = { action(FieldsEditUserAction.ClickConfirm) },
+                onClick = ClickExtension.rememberSingleClick { action(FieldsEditUserAction.ClickConfirm) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(text = "确认")

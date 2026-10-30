@@ -17,6 +17,7 @@ class FieldsEditPageModel : ViewModel() {
     private val _effect = Channel<FieldsEditEffect>(capacity = Channel.UNLIMITED)
     val effect = _effect.receiveAsFlow()
     private var initialized = false
+    private var finishing = false
     private var initialField: VaultFieldInfo = VaultFieldInfo()
 
     fun init(field: VaultFieldInfo) {
@@ -57,12 +58,14 @@ class FieldsEditPageModel : ViewModel() {
     }
 
     private fun onConfirmClicked() {
+        if (finishing) return
         val value = uiState.value.value.trim()
         val valueError = if (value.isEmpty()) "请输入内容" else ""
         if (valueError.isNotEmpty()) {
             uiState.update { it.copy(valueError = valueError) }
             return
         }
+        finishing = true
         val current = initialField.snapshotList.firstOrNull()
         val snapshotList = if (current != null && current.value == value) {
             initialField.snapshotList
@@ -85,8 +88,10 @@ class FieldsEditPageModel : ViewModel() {
     }
 
     private fun onDeleteClicked() {
+        if (finishing) return
         val fieldId = uiState.value.id
         if (fieldId.isEmpty()) return
+        finishing = true
         viewModelScope.launchOnDefault {
             _effect.send(FieldsEditEffect.FinishDeleted(fieldId))
         }
