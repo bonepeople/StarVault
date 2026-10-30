@@ -1,0 +1,52 @@
+package com.bonepeople.android.starvault.module.record.tags.add
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+
+class TagAddPageModel : ViewModel() {
+    val uiState: MutableStateFlow<TagAddState> = MutableStateFlow(TagAddState.Default)
+    private val _effect = Channel<TagAddEffect>(capacity = Channel.UNLIMITED)
+    val effect = _effect.receiveAsFlow()
+    private var initialized = false
+    private var existingTags: Set<String> = emptySet()
+
+    fun init(existingTags: List<String>) {
+        if (initialized) return
+        initialized = true
+        this.existingTags = existingTags.toSet()
+    }
+
+    fun dispatch(action: TagAddUserAction) {
+        when (action) {
+            is TagAddUserAction.UpdateName -> onNameUpdated(action.name)
+            TagAddUserAction.ClickConfirm -> onConfirmClicked()
+        }
+    }
+
+    private fun onNameUpdated(name: String) {
+        uiState.update { it.copy(name = name, nameError = "") }
+    }
+
+    private fun onConfirmClicked() {
+        if (uiState.value.submitting) return
+        val name = uiState.value.name.trim()
+        val nameError = when {
+            name.isEmpty() -> "请输入标签"
+            name in existingTags -> "标签已存在"
+            else -> ""
+        }
+        if (nameError.isNotEmpty()) {
+            uiState.update { it.copy(nameError = nameError) }
+            return
+        }
+        uiState.update { it.copy(submitting = true, nameError = "") }
+        viewModelScope.launchOnDefault {
+            _effect.send(TagAddEffect.FinishAdded(name))
+        }
+    }
+}

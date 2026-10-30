@@ -23,25 +23,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,10 +42,11 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
-import com.bonepeople.android.starvault.global.util.ClickExtension
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
+import com.bonepeople.android.starvault.module.record.tags.add.TagAddFragment
 import kotlinx.coroutines.launch
 
 class TagsEditFragment : BaseFragment() {
@@ -67,6 +61,7 @@ class TagsEditFragment : BaseFragment() {
     override fun initData(savedInstanceState: Bundle?) {
         viewModel.effect.observeWithLifecycle(viewLifecycleOwner, Lifecycle.State.RESUMED) { effect ->
             when (effect) {
+                is TagsEditEffect.OpenTagAdd -> openTagAdd(effect.existingTags)
                 is TagsEditEffect.FinishWithResult -> finishWithResult(effect.tags)
             }
         }
@@ -76,6 +71,13 @@ class TagsEditFragment : BaseFragment() {
 
     override fun handleBackPress() {
         viewModel.dispatch(TagsEditUserAction.ClickBack)
+    }
+
+    private fun openTagAdd(existingTags: List<String>) {
+        StandardActivity.call(TagAddFragment.newInstance(existingTags)).onSuccess { intent ->
+            val tag = TagAddFragment.parseResult(intent) ?: return@onSuccess
+            viewModel.dispatch(TagsEditUserAction.TagAdded(tag))
+        }
     }
 
     private fun finishWithResult(tags: List<String>) {
@@ -130,7 +132,7 @@ class TagsEditFragment : BaseFragment() {
                 Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier
-                        .singleClick { action(TagsEditUserAction.ClickOpenAddDialog) }
+                        .singleClick { action(TagsEditUserAction.ClickAdd) }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -158,15 +160,6 @@ class TagsEditFragment : BaseFragment() {
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.align(Alignment.BottomCenter),
-            )
-        }
-        if (uiState.addDialogVisible) {
-            AddTagDialog(
-                inputText = uiState.inputText,
-                inputError = uiState.inputError,
-                onInputChange = { action(TagsEditUserAction.UpdateInput(it)) },
-                onConfirm = { action(TagsEditUserAction.ClickConfirmAdd) },
-                onDismiss = { action(TagsEditUserAction.DismissAddDialog) },
             )
         }
     }
@@ -288,56 +281,6 @@ class TagsEditFragment : BaseFragment() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-        )
-    }
-
-    @Composable
-    private fun AddTagDialog(
-        inputText: String,
-        inputError: String,
-        onInputChange: (String) -> Unit,
-        onConfirm: () -> Unit,
-        onDismiss: () -> Unit,
-    ) {
-        val focusRequester = remember { FocusRequester() }
-        val keyboardController = LocalSoftwareKeyboardController.current
-        val isPreview = LocalInspectionMode.current
-        if (!isPreview) {
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
-                keyboardController?.show()
-            }
-        }
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(text = "添加标签") },
-            text = {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = onInputChange,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                    label = { Text(text = "新标签") },
-                    isError = inputError.isNotEmpty(),
-                    supportingText = if (inputError.isNotEmpty()) {
-                        { Text(text = inputError) }
-                    } else {
-                        null
-                    },
-                    singleLine = true,
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = ClickExtension.rememberSingleClick(onClick = onConfirm)) {
-                    Text(text = "添加")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = ClickExtension.rememberSingleClick(onClick = onDismiss)) {
-                    Text(text = "取消")
-                }
-            },
         )
     }
 

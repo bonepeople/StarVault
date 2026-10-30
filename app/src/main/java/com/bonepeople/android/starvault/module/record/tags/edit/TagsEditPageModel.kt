@@ -23,10 +23,8 @@ class TagsEditPageModel : ViewModel() {
 
     fun dispatch(action: TagsEditUserAction) {
         when (action) {
-            TagsEditUserAction.ClickOpenAddDialog -> onOpenAddDialog()
-            TagsEditUserAction.DismissAddDialog -> onDismissAddDialog()
-            is TagsEditUserAction.UpdateInput -> onInputUpdated(action.text)
-            TagsEditUserAction.ClickConfirmAdd -> onConfirmAdd()
+            TagsEditUserAction.ClickAdd -> onAddClicked()
+            is TagsEditUserAction.TagAdded -> onTagAdded(action.tag)
             is TagsEditUserAction.ClickDelete -> onDelete(action.tag)
             is TagsEditUserAction.MoveTag -> onMoveTag(action.from, action.to)
             TagsEditUserAction.UndoDelete -> onUndoDelete()
@@ -36,53 +34,25 @@ class TagsEditPageModel : ViewModel() {
     }
 
     private fun onBackPressed() {
-        if (uiState.value.addDialogVisible) {
-            onDismissAddDialog()
-        } else {
-            finishWithCurrentTags()
+        finishWithCurrentTags()
+    }
+
+    private fun onAddClicked() {
+        viewModelScope.launchOnDefault {
+            _effect.send(TagsEditEffect.OpenTagAdd(uiState.value.tags))
         }
+    }
+
+    private fun onTagAdded(tag: String) {
+        val name = tag.trim()
+        if (name.isEmpty() || name in uiState.value.tags) return
+        addTag(name)
     }
 
     private fun finishWithCurrentTags() {
         viewModelScope.launchOnDefault {
             _effect.send(TagsEditEffect.FinishWithResult(uiState.value.tags))
         }
-    }
-
-    private fun onOpenAddDialog() {
-        uiState.update {
-            it.copy(
-                addDialogVisible = true,
-                inputText = "",
-                inputError = "",
-            )
-        }
-    }
-
-    private fun onDismissAddDialog() {
-        uiState.update {
-            it.copy(
-                addDialogVisible = false,
-                inputText = "",
-                inputError = "",
-            )
-        }
-    }
-
-    private fun onInputUpdated(text: String) {
-        uiState.update { it.copy(inputText = text, inputError = "") }
-    }
-
-    private fun onConfirmAdd() {
-        val tag = uiState.value.inputText.trim()
-        if (tag.isEmpty()) {
-            return
-        }
-        if (tag in uiState.value.tags) {
-            uiState.update { it.copy(inputError = "标签已存在") }
-            return
-        }
-        addTag(tag)
     }
 
     private fun onRecommendTag(tag: String) {
@@ -93,14 +63,7 @@ class TagsEditPageModel : ViewModel() {
     }
 
     private fun addTag(tag: String) {
-        uiState.update {
-            it.copy(
-                tags = it.tags + tag,
-                addDialogVisible = false,
-                inputText = "",
-                inputError = "",
-            ).withUpdatedRecommendations()
-        }
+        uiState.update { it.copy(tags = it.tags + tag).withUpdatedRecommendations() }
     }
 
     private fun onDelete(tag: String) {

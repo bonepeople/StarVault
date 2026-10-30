@@ -5,12 +5,6 @@ import com.google.gson.annotations.SerializedName
 data class TagsEditState(
     @SerializedName("tags")
     val tags: List<String> = emptyList(),
-    @SerializedName("addDialogVisible")
-    val addDialogVisible: Boolean = false,
-    @SerializedName("inputText")
-    val inputText: String = "",
-    @SerializedName("inputError")
-    val inputError: String = "",
     @SerializedName("pendingUndo")
     val pendingUndo: PendingUndoInfo? = null,
     @SerializedName("recommendedTags")
@@ -24,19 +18,6 @@ data class TagsEditState(
         )
 
         val Empty = TagsEditState()
-
-        val DialogOpen = TagsEditState(
-            tags = listOf("开发"),
-            addDialogVisible = true,
-            inputText = "新标签",
-        )
-
-        val WithError = TagsEditState(
-            tags = listOf("开发"),
-            addDialogVisible = true,
-            inputText = "开发",
-            inputError = "标签已存在",
-        )
     }
 
     companion object {
