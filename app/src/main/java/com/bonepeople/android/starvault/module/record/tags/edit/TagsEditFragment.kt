@@ -75,8 +75,8 @@ class TagsEditFragment : BaseFragment() {
 
     private fun openTagAdd(existingTags: List<String>) {
         StandardActivity.call(TagAddFragment.newInstance(existingTags)).onSuccess { intent ->
-            val tag = TagAddFragment.parseResult(intent) ?: return@onSuccess
-            viewModel.dispatch(TagsEditUserAction.TagAdded(tag))
+            val name = TagAddFragment.parseResult(intent)?.name ?: return@onSuccess
+            viewModel.dispatch(TagsEditUserAction.TagAdded(name))
         }
     }
 

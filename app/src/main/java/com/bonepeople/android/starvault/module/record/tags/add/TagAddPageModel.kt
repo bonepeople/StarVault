@@ -3,10 +3,12 @@ package com.bonepeople.android.starvault.module.record.tags.add
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 class TagAddPageModel : ViewModel() {
     val uiState: MutableStateFlow<TagAddState> = MutableStateFlow(TagAddState.Default)
@@ -45,8 +47,9 @@ class TagAddPageModel : ViewModel() {
             return
         }
         uiState.update { it.copy(submitting = true, nameError = "") }
+        val tag = VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = name)
         viewModelScope.launchOnDefault {
-            _effect.send(TagAddEffect.FinishAdded(name))
+            _effect.send(TagAddEffect.FinishAdded(tag))
         }
     }
 }

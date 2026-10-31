@@ -3,7 +3,7 @@ package com.bonepeople.android.starvault.module.record.tags.edit
 sealed interface TagsEditUserAction {
     // 用户点击「添加标签」
     object ClickAdd : TagsEditUserAction
-    // 添加页返回新标签名称
+    // 添加页返回的标签名称
     data class TagAdded(val tag: String) : TagsEditUserAction
     // 用户点击标签删除按钮
     data class ClickDelete(val tag: String) : TagsEditUserAction

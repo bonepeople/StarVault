@@ -43,7 +43,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension
+import com.bonepeople.android.widget.util.AppGson
 
 class TagAddFragment : BaseFragment() {
     private val viewModel: TagAddPageModel by viewModels()
@@ -64,8 +66,8 @@ class TagAddFragment : BaseFragment() {
         viewModel.init(existingTags)
     }
 
-    private fun finishAdded(tag: String) {
-        val intent = Intent().putExtra(EXTRA_TAG, tag)
+    private fun finishAdded(tag: VaultTagDefinitionInfo) {
+        val intent = Intent().putExtra(EXTRA_TAG_JSON, AppGson.toJson(tag))
         requireActivity().setResult(Activity.RESULT_OK, intent)
         requireActivity().finishAfterTransition()
     }
@@ -145,11 +147,12 @@ class TagAddFragment : BaseFragment() {
     }
 
     companion object {
-        private const val EXTRA_TAG = "tag"
+        private const val EXTRA_TAG_JSON = "tag_json"
         private const val ARG_EXISTING_TAGS = "existing_tags"
 
-        fun parseResult(intent: Intent?): String? {
-            return intent?.getStringExtra(EXTRA_TAG)?.takeIf { it.isNotEmpty() }
+        fun parseResult(intent: Intent?): VaultTagDefinitionInfo? {
+            val json = intent?.getStringExtra(EXTRA_TAG_JSON) ?: return null
+            return runCatching { AppGson.toObject<VaultTagDefinitionInfo>(json) }.getOrNull()
         }
 
         fun newInstance(existingTags: List<String>): TagAddFragment {
