@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.zIndex
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import kotlinx.coroutines.launch
 
 object ReorderableTagFlow {
@@ -56,18 +57,18 @@ object ReorderableTagFlow {
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun Content(
-        tags: List<String>,
+        tags: List<VaultTagDefinitionInfo>,
         onMove: (from: Int, to: Int) -> Unit,
         modifier: Modifier = Modifier,
         horizontalSpacing: Dp = 6.dp,
         verticalSpacing: Dp = 4.dp,
-        chipContent: @Composable (tag: String) -> Unit,
+        chipContent: @Composable (tag: VaultTagDefinitionInfo) -> Unit,
     ) {
         val haptic = LocalHapticFeedback.current
         val density = LocalDensity.current
         val scope = rememberCoroutineScope()
         // 当前被拖动的标签，null 表示没有拖动
-        var draggingTag by remember { mutableStateOf<String?>(null) }
+        var draggingTagId by remember { mutableStateOf<String?>(null) }
         // 被拖动标签左上角在容器坐标系中的实时位置
         var fingerOffset by remember { mutableStateOf(Offset.Zero) }
         // 手指触点在容器坐标系中的实时位置，用于判断目标标签
@@ -78,14 +79,14 @@ object ReorderableTagFlow {
         var draggingWidth by remember { mutableStateOf(0) }
         var placeholderWidth by remember { mutableStateOf(0) }
         // 每个标签在流式布局中的稳定槽位矩形，用于拖动时的命中判断
-        val slotRects = remember { mutableMapOf<String, Rect>() }
+        val slotRectsByTagId = remember { mutableMapOf<String, Rect>() }
         // 通过 rememberUpdatedState 让手势回调始终读取到最新的列表与回调
         val latestTags by rememberUpdatedState(tags)
         val latestOnMove by rememberUpdatedState(onMove)
 
         // 拖动结束后将标签平滑归位到它的最终槽位，再退出拖动状态
         fun settleToSlot() {
-            val dragged = draggingTag ?: return
+            val draggedTagId = draggingTagId ?: return
             val start = fingerOffset
             val startScale = draggingScale
             // 立即恢复真实标签宽度，让 FlowRow 的重新排序与浮动标签归位同时开始
@@ -100,13 +101,13 @@ object ReorderableTagFlow {
                     ),
                 ) { progress, _ ->
                     // 占位宽度变化后槽位可能换行，动画过程中持续跟随最新目标位置
-                    val target = slotRects[dragged]?.topLeft ?: start
+                    val target = slotRectsByTagId[draggedTagId]?.topLeft ?: start
                     fingerOffset = start + (target - start) * progress
                     draggingScale = startScale + (1f - startScale) * progress
                 }
-                fingerOffset = slotRects[dragged]?.topLeft ?: fingerOffset
+                fingerOffset = slotRectsByTagId[draggedTagId]?.topLeft ?: fingerOffset
                 draggingScale = 1f
-                draggingTag = null
+                draggingTagId = null
                 placeholderWidth = 0
             }
         }
@@ -118,8 +119,8 @@ object ReorderableTagFlow {
                 verticalArrangement = Arrangement.spacedBy(verticalSpacing),
             ) {
                 tags.forEach { tag ->
-                    key(tag) {
-                        val isDragging = tag == draggingTag
+                    key(tag.id) {
+                        val isDragging = tag.id == draggingTagId
                         // 该标签当前的槽位左上角，供被拖动标签计算跟随手指所需的位移
                         var slot by remember { mutableStateOf(Offset.Zero) }
                         Box(
@@ -135,7 +136,7 @@ object ReorderableTagFlow {
                                 .onGloballyPositioned { coordinates ->
                                     val position = coordinates.positionInParent()
                                     slot = position
-                                    slotRects[tag] = Rect(
+                                    slotRectsByTagId[tag.id] = Rect(
                                         offset = position,
                                         size = Size(
                                             coordinates.size.width.toFloat(),
@@ -146,11 +147,11 @@ object ReorderableTagFlow {
                                 // 被拖动项在 FlowRow 中只保留透明占位，实际标签由外层浮动副本绘制
                                 .graphicsLayer { alpha = if (isDragging) 0f else 1f }
                                 .then(if (isDragging) Modifier else Modifier.animatePlacement())
-                                .pointerInput(tag) {
+                                .pointerInput(tag.id) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { touchOffset ->
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            val tagRect = slotRects[tag]
+                                            val tagRect = slotRectsByTagId[tag.id]
                                             val tagPosition = tagRect?.topLeft ?: slot
                                             val tagWidth = tagRect?.width?.toInt() ?: 0
                                             fingerOffset = tagPosition
@@ -158,23 +159,23 @@ object ReorderableTagFlow {
                                             draggingWidth = tagWidth
                                             placeholderWidth = tagWidth
                                             draggingScale = 1.05f
-                                            draggingTag = tag
+                                            draggingTagId = tag.id
                                         },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             fingerOffset += dragAmount
                                             pointerPosition += dragAmount
-                                            val dragged = draggingTag
-                                            if (dragged != null) {
+                                            val draggedTagId = draggingTagId
+                                            if (draggedTagId != null) {
                                                 val current = latestTags
-                                                val from = current.indexOf(dragged)
+                                                val from = current.indexOfFirst { it.id == draggedTagId }
                                                 val to = current.indexOfFirst { candidate ->
-                                                    candidate != dragged &&
-                                                        slotRects[candidate]
+                                                    candidate.id != draggedTagId &&
+                                                        slotRectsByTagId[candidate.id]
                                                             ?.contains(pointerPosition) == true
                                                 }
                                                 if (from >= 0 && to >= 0 && to != from) {
-                                                    val targetRect = slotRects[current[to]]
+                                                    val targetRect = slotRectsByTagId[current[to].id]
                                                     if (targetRect != null) {
                                                         placeholderWidth = maxOf(
                                                             draggingWidth,
@@ -196,8 +197,8 @@ object ReorderableTagFlow {
                 }
             }
 
-            val dragged = draggingTag
-            if (dragged != null) {
+            val draggedTag = latestTags.firstOrNull { it.id == draggingTagId }
+            if (draggedTag != null) {
                 Box(
                     modifier = Modifier
                         .zIndex(1f)
@@ -208,7 +209,7 @@ object ReorderableTagFlow {
                             scaleY = draggingScale
                         },
                 ) {
-                    chipContent(dragged)
+                    chipContent(draggedTag)
                 }
             }
         }

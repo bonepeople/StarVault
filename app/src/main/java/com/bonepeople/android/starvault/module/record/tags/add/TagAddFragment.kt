@@ -62,7 +62,9 @@ class TagAddFragment : BaseFragment() {
                 is TagAddEffect.FinishAdded -> finishAdded(effect.tag)
             }
         }
-        val existingTags = requireArguments().getStringArrayList(ARG_EXISTING_TAGS).orEmpty()
+        val existingTags = runCatching {
+            AppGson.toObject<List<VaultTagDefinitionInfo>>(requireArguments().getString(ARG_EXISTING_TAGS_JSON))
+        }.getOrDefault(emptyList())
         viewModel.init(existingTags)
     }
 
@@ -148,16 +150,16 @@ class TagAddFragment : BaseFragment() {
 
     companion object {
         private const val EXTRA_TAG_JSON = "tag_json"
-        private const val ARG_EXISTING_TAGS = "existing_tags"
+        private const val ARG_EXISTING_TAGS_JSON = "existing_tags_json"
 
         fun parseResult(intent: Intent?): VaultTagDefinitionInfo? {
             val json = intent?.getStringExtra(EXTRA_TAG_JSON) ?: return null
             return runCatching { AppGson.toObject<VaultTagDefinitionInfo>(json) }.getOrNull()
         }
 
-        fun newInstance(existingTags: List<String>): TagAddFragment {
+        fun newInstance(existingTags: List<VaultTagDefinitionInfo>): TagAddFragment {
             return TagAddFragment().apply {
-                arguments = bundleOf(ARG_EXISTING_TAGS to ArrayList(existingTags))
+                arguments = bundleOf(ARG_EXISTING_TAGS_JSON to AppGson.toJson(existingTags))
             }
         }
     }

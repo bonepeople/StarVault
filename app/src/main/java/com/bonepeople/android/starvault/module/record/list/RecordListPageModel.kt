@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import com.bonepeople.android.starvault.module.record.create.RecordCreateFragment
 import com.bonepeople.android.starvault.module.record.detail.RecordDetailFragment
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 class RecordListPageModel : ViewModel() {
     val uiState: MutableStateFlow<RecordListState> = MutableStateFlow(RecordListState.Default)
@@ -31,11 +33,7 @@ class RecordListPageModel : ViewModel() {
         viewModelScope.launchOnDefault {
             uiState.update { it.copy(loading = true) }
             val items = VaultManager.currentVault.recordList.map { record ->
-                RecordListState.Item(
-                    id = record.id,
-                    title = record.title,
-                    tags = record.tagList,
-                )
+                RecordListState.Item(id = record.id, title = record.title, tags = record.tagList.map { name -> VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = name) })
             }
             uiState.update { it.copy(loading = false, items = items) }
         }

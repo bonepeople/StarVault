@@ -15,12 +15,12 @@ class TagAddPageModel : ViewModel() {
     private val _effect = Channel<TagAddEffect>(capacity = Channel.UNLIMITED)
     val effect = _effect.receiveAsFlow()
     private var initialized = false
-    private var existingTags: Set<String> = emptySet()
+    private var existingTagNames: Set<String> = emptySet()
 
-    fun init(existingTags: List<String>) {
+    fun init(existingTags: List<VaultTagDefinitionInfo>) {
         if (initialized) return
         initialized = true
-        this.existingTags = existingTags.toSet()
+        existingTagNames = existingTags.map { it.name }.toSet()
     }
 
     fun dispatch(action: TagAddUserAction) {
@@ -39,7 +39,7 @@ class TagAddPageModel : ViewModel() {
         val name = uiState.value.name.trim()
         val nameError = when {
             name.isEmpty() -> "请输入标签"
-            name in existingTags -> "标签已存在"
+            name in existingTagNames -> "标签已存在"
             else -> ""
         }
         if (nameError.isNotEmpty()) {

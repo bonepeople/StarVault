@@ -1,5 +1,6 @@
 package com.bonepeople.android.starvault.module.record.detail
 
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import com.google.gson.annotations.SerializedName
 
 data class RecordDetailState(
@@ -10,7 +11,7 @@ data class RecordDetailState(
     @SerializedName("title")
     val title: String = "",
     @SerializedName("tags")
-    val tags: List<String> = emptyList(),
+    val tags: List<VaultTagDefinitionInfo> = emptyList(),
     @SerializedName("fields")
     val fields: List<Field> = emptyList(),
 ) {
@@ -27,7 +28,10 @@ data class RecordDetailState(
     object Preview {
         val Normal = RecordDetailState(
             title = "GitHub",
-            tags = listOf("开发", "工作"),
+            tags = listOf(
+                VaultTagDefinitionInfo(id = "tag-dev", name = "开发"),
+                VaultTagDefinitionInfo(id = "tag-work", name = "工作"),
+            ),
             fields = listOf(
                 Field(
                     id = "1",
@@ -50,6 +54,13 @@ data class RecordDetailState(
         val Loading = RecordDetailState(loading = true)
 
         val NotFound = RecordDetailState(notFound = true)
+
+        val EmptyTags = RecordDetailState(title = "无标签记录")
+
+        val LongName = RecordDetailState(
+            title = "超长标签",
+            tags = listOf(VaultTagDefinitionInfo(id = "tag-long", name = "这是一个很长很长很长很长很长很长很长很长的标签名称")),
+        )
     }
 
     companion object {

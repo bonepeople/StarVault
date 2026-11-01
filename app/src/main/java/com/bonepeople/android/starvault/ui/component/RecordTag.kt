@@ -13,13 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 
 object RecordTag {
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun TagSection(
-        tags: List<String>,
+        tags: List<VaultTagDefinitionInfo>,
         editable: Boolean,
         modifier: Modifier = Modifier,
         onEdit: () -> Unit = {},
@@ -55,7 +56,7 @@ object RecordTag {
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 tags.forEach { tag ->
-                    TagChip(text = tag)
+                    TagChip(text = tag.name)
                 }
             }
         }

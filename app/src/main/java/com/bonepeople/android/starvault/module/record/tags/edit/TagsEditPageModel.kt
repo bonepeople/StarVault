@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 class TagsEditPageModel : ViewModel() {
     val uiState: MutableStateFlow<TagsEditState> = MutableStateFlow(TagsEditState.Default)
@@ -15,7 +17,7 @@ class TagsEditPageModel : ViewModel() {
     val effect = _effect.receiveAsFlow()
     private var initialized = false
 
-    fun init(tags: List<String>) {
+    fun init(tags: List<VaultTagDefinitionInfo>) {
         if (initialized) return
         initialized = true
         uiState.update { it.copy(tags = tags).withUpdatedRecommendations() }
@@ -43,10 +45,9 @@ class TagsEditPageModel : ViewModel() {
         }
     }
 
-    private fun onTagAdded(tag: String) {
-        val name = tag.trim()
-        if (name.isEmpty() || name in uiState.value.tags) return
-        addTag(name)
+    private fun onTagAdded(tag: VaultTagDefinitionInfo) {
+        if (tag.id.isEmpty() || tag.name.isEmpty()) return
+        addTag(tag)
     }
 
     private fun finishWithCurrentTags() {
@@ -55,22 +56,23 @@ class TagsEditPageModel : ViewModel() {
         }
     }
 
-    private fun onRecommendTag(tag: String) {
-        if (tag in uiState.value.tags) {
-            return
-        }
-        addTag(tag)
+    private fun onRecommendTag(name: String) {
+        if (uiState.value.tags.any { it.name == name }) return
+        addTag(VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = name))
     }
 
-    private fun addTag(tag: String) {
-        uiState.update { it.copy(tags = it.tags + tag).withUpdatedRecommendations() }
+    private fun addTag(tag: VaultTagDefinitionInfo) {
+        uiState.update { state ->
+            if (state.tags.any { it.id == tag.id }) {
+                return@update state
+            }
+            state.copy(tags = state.tags + tag).withUpdatedRecommendations()
+        }
     }
 
-    private fun onDelete(tag: String) {
-        val index = uiState.value.tags.indexOf(tag)
-        if (index < 0) {
-            return
-        }
+    private fun onDelete(tag: VaultTagDefinitionInfo) {
+        val index = uiState.value.tags.indexOfFirst { it.id == tag.id }
+        if (index < 0) return
         uiState.update {
             it.copy(
                 tags = it.tags.filterIndexed { i, _ -> i != index },
@@ -93,7 +95,7 @@ class TagsEditPageModel : ViewModel() {
     private fun onUndoDelete() {
         val undo = uiState.value.pendingUndo ?: return
         uiState.update { state ->
-            val newTags = state.tags.filter { it != undo.tag }.toMutableList()
+            val newTags = state.tags.filter { it.id != undo.tag.id }.toMutableList()
             val insertIndex = undo.index.coerceIn(0, newTags.size)
             newTags.add(insertIndex, undo.tag)
             state.copy(tags = newTags, pendingUndo = null).withUpdatedRecommendations()
@@ -101,6 +103,7 @@ class TagsEditPageModel : ViewModel() {
     }
 
     private fun TagsEditState.withUpdatedRecommendations(): TagsEditState {
-        return copy(recommendedTags = VaultManager.recommendedTagList.filter { it !in tags })
+        val selectedNames = tags.map { it.name }.toSet()
+        return copy(recommendedTags = VaultManager.recommendedTagList.filter { it !in selectedNames })
     }
 }

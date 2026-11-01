@@ -45,8 +45,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.tags.add.TagAddFragment
+import com.bonepeople.android.widget.util.AppGson
 import kotlinx.coroutines.launch
 
 class TagsEditFragment : BaseFragment() {
@@ -65,7 +67,9 @@ class TagsEditFragment : BaseFragment() {
                 is TagsEditEffect.FinishWithResult -> finishWithResult(effect.tags)
             }
         }
-        val initialTags = requireArguments().getStringArrayList(ARG_INITIAL_TAGS).orEmpty()
+        val initialTags = runCatching {
+            AppGson.toObject<List<VaultTagDefinitionInfo>>(requireArguments().getString(ARG_TAGS_JSON))
+        }.getOrDefault(emptyList())
         viewModel.init(initialTags)
     }
 
@@ -73,15 +77,16 @@ class TagsEditFragment : BaseFragment() {
         viewModel.dispatch(TagsEditUserAction.ClickBack)
     }
 
-    private fun openTagAdd(existingTags: List<String>) {
+    private fun openTagAdd(existingTags: List<VaultTagDefinitionInfo>) {
         StandardActivity.call(TagAddFragment.newInstance(existingTags)).onSuccess { intent ->
-            val name = TagAddFragment.parseResult(intent)?.name ?: return@onSuccess
-            viewModel.dispatch(TagsEditUserAction.TagAdded(name))
+            val tag = TagAddFragment.parseResult(intent) ?: return@onSuccess
+            viewModel.dispatch(TagsEditUserAction.TagAdded(tag))
         }
     }
 
-    private fun finishWithResult(tags: List<String>) {
-        requireActivity().setResult(Activity.RESULT_OK, Intent().putStringArrayListExtra(EXTRA_TAGS, ArrayList(tags)))
+    private fun finishWithResult(tags: List<VaultTagDefinitionInfo>) {
+        val intent = Intent().putExtra(EXTRA_TAGS_JSON, AppGson.toJson(tags))
+        requireActivity().setResult(Activity.RESULT_OK, intent)
         requireActivity().finishAfterTransition()
     }
 
@@ -94,7 +99,7 @@ class TagsEditFragment : BaseFragment() {
             launch {
                 snackbarHostState.currentSnackbarData?.dismiss()
                 val result = snackbarHostState.showSnackbar(
-                    message = "已删除「${undo.tag}」",
+                    message = "已删除「${undo.tag.name}」",
                     actionLabel = "撤回",
                 )
                 if (result == SnackbarResult.ActionPerformed) {
@@ -166,8 +171,8 @@ class TagsEditFragment : BaseFragment() {
 
     @Composable
     private fun TagList(
-        tags: List<String>,
-        onDelete: (String) -> Unit,
+        tags: List<VaultTagDefinitionInfo>,
+        onDelete: (VaultTagDefinitionInfo) -> Unit,
         onMove: (from: Int, to: Int) -> Unit,
         modifier: Modifier = Modifier,
     ) {
@@ -185,7 +190,7 @@ class TagsEditFragment : BaseFragment() {
                 modifier = modifier.fillMaxWidth(),
             ) { tag ->
                 DeletableTagChip(
-                    text = tag,
+                    text = tag.name,
                     onDelete = { onDelete(tag) },
                 )
             }
@@ -285,12 +290,17 @@ class TagsEditFragment : BaseFragment() {
     }
 
     companion object {
-        const val EXTRA_TAGS = "tags"
-        private const val ARG_INITIAL_TAGS = "initial_tags"
+        private const val EXTRA_TAGS_JSON = "tags_json"
+        private const val ARG_TAGS_JSON = "tags_json"
 
-        fun newInstance(initialTags: List<String>): TagsEditFragment {
+        fun parseResult(intent: Intent?): List<VaultTagDefinitionInfo>? {
+            val json = intent?.getStringExtra(EXTRA_TAGS_JSON) ?: return null
+            return runCatching { AppGson.toObject<List<VaultTagDefinitionInfo>>(json) }.getOrNull()
+        }
+
+        fun newInstance(tags: List<VaultTagDefinitionInfo>): TagsEditFragment {
             return TagsEditFragment().apply {
-                arguments = bundleOf(ARG_INITIAL_TAGS to ArrayList(initialTags))
+                arguments = bundleOf(ARG_TAGS_JSON to AppGson.toJson(tags))
             }
         }
     }

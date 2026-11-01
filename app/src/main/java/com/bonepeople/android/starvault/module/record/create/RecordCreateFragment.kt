@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension
 import com.bonepeople.android.starvault.module.record.detail.RecordDetailFragment
 import com.bonepeople.android.starvault.module.record.tags.edit.TagsEditFragment
@@ -59,9 +60,9 @@ class RecordCreateFragment : BaseFragment() {
         }
     }
 
-    private fun openTagsEdit(tags: List<String>) {
+    private fun openTagsEdit(tags: List<VaultTagDefinitionInfo>) {
         StandardActivity.call(TagsEditFragment.newInstance(tags)).onSuccess { intent ->
-            val resultTags = intent?.getStringArrayListExtra(TagsEditFragment.EXTRA_TAGS) ?: return@onSuccess
+            val resultTags = TagsEditFragment.parseResult(intent) ?: return@onSuccess
             viewModel.dispatch(RecordCreateUserAction.TagsUpdated(resultTags))
         }
     }

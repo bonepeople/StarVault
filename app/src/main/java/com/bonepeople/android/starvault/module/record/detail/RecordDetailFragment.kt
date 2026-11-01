@@ -38,6 +38,7 @@ import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.FlowExtension.observeWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import com.bonepeople.android.starvault.global.util.ClickExtension.singleClick
 import com.bonepeople.android.starvault.module.record.fields.edit.FieldsEditFragment
 import com.bonepeople.android.starvault.module.record.fields.select.FieldsSelectFragment
@@ -67,9 +68,9 @@ class RecordDetailFragment : BaseFragment() {
         viewModel.init(recordId)
     }
 
-    private fun openTagsEdit(tags: List<String>) {
+    private fun openTagsEdit(tags: List<VaultTagDefinitionInfo>) {
         StandardActivity.call(TagsEditFragment.newInstance(tags)).onSuccess { intent ->
-            val resultTags = intent?.getStringArrayListExtra(TagsEditFragment.EXTRA_TAGS) ?: return@onSuccess
+            val resultTags = TagsEditFragment.parseResult(intent) ?: return@onSuccess
             if (resultTags == tags) return@onSuccess
             viewModel.dispatch(RecordDetailUserAction.TagsUpdated(resultTags))
             requireActivity().setResult(Activity.RESULT_OK)
@@ -188,7 +189,7 @@ class RecordDetailFragment : BaseFragment() {
     @Composable
     private fun Header(
         title: String,
-        tags: List<String>,
+        tags: List<VaultTagDefinitionInfo>,
         onEditTags: () -> Unit,
         modifier: Modifier = Modifier,
     ) {

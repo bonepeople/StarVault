@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.data.VaultRecordInfo
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -35,7 +36,7 @@ class RecordCreatePageModel : ViewModel() {
         }
     }
 
-    private fun onTagsUpdated(tags: List<String>) {
+    private fun onTagsUpdated(tags: List<VaultTagDefinitionInfo>) {
         uiState.update { it.copy(tags = tags) }
     }
 
@@ -50,7 +51,7 @@ class RecordCreatePageModel : ViewModel() {
             val record = VaultRecordInfo(
                 id = UUID.randomUUID().toString(),
                 title = title,
-                tagList = uiState.value.tags,
+                tagList = uiState.value.tags.map { it.name },
                 fieldList = emptyList(),
             )
             VaultManager.addRecord(record)

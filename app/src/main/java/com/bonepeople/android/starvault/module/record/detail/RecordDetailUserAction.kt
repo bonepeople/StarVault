@@ -1,6 +1,7 @@
 package com.bonepeople.android.starvault.module.record.detail
 
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
 
 sealed interface RecordDetailUserAction {
     // 用户点击标签区域
@@ -16,7 +17,7 @@ sealed interface RecordDetailUserAction {
     // 字段编辑页返回删除的字段 ID
     data class FieldDeleted(val fieldId: String) : RecordDetailUserAction
     // 标签编辑页返回后回写标签
-    data class TagsUpdated(val tags: List<String>) : RecordDetailUserAction
+    data class TagsUpdated(val tags: List<VaultTagDefinitionInfo>) : RecordDetailUserAction
     // 用户长按完成删除记录
     object ClickDelete : RecordDetailUserAction
 }
