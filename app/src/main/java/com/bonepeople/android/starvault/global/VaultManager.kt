@@ -5,6 +5,8 @@ import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.starvault.global.data.VaultFieldSnapshotInfo
 import com.bonepeople.android.starvault.global.data.VaultInfo
 import com.bonepeople.android.starvault.global.data.VaultRecordInfo
+import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
+import com.bonepeople.android.starvault.global.util.TagDefinitionUtil
 import java.util.UUID
 
 object VaultManager {
@@ -19,6 +21,26 @@ object VaultManager {
 
     fun findFieldDefinitionById(definitionId: String): VaultFieldDefinitionInfo? {
         return currentVault.fieldDefinitionList.find { it.id == definitionId }
+    }
+
+    fun findTagDefinitionById(definitionId: String): VaultTagDefinitionInfo? {
+        if (definitionId.isEmpty()) return null
+        return currentVault.tagDefinitionList.find { it.id == definitionId }
+    }
+
+    fun findTagDefinitionByName(name: String): VaultTagDefinitionInfo? {
+        val normalizedName = TagDefinitionUtil.normalizeName(name)
+        if (normalizedName.isEmpty()) return null
+        return currentVault.tagDefinitionList.find { TagDefinitionUtil.normalizeName(it.name) == normalizedName }
+    }
+
+    fun createTagDefinition(definition: VaultTagDefinitionInfo): VaultTagDefinitionInfo? {
+        val name = definition.name.trim()
+        if (definition.id.isEmpty() || TagDefinitionUtil.normalizeName(name).isEmpty()) return null
+        if (findTagDefinitionById(definition.id) != null || findTagDefinitionByName(name) != null) return null
+        val newDefinition = definition.copy(name = name)
+        updateVault(currentVault.copy(tagDefinitionList = currentVault.tagDefinitionList + newDefinition))
+        return newDefinition
     }
 
     fun createFieldDefinition(name: String, description: String): VaultFieldDefinitionInfo {
@@ -124,11 +146,18 @@ object VaultManager {
             ),
         )
         val fieldDefinitionIdMap = fieldDefinitionList.associate { it.name to it.id }
+        val tagDefinitionList = listOf(
+            VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = "开发"),
+            VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = "工作"),
+            VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = "家庭"),
+            VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = "网络"),
+        )
         updateVault(VaultInfo(
             id = UUID.randomUUID().toString(),
             name = "演示保险库",
             description = "用于 UI 与逻辑测试的示例数据",
             fieldDefinitionList = fieldDefinitionList,
+            tagDefinitionList = tagDefinitionList,
             recordList = listOf(
                 VaultRecordInfo(
                     id = UUID.randomUUID().toString(),

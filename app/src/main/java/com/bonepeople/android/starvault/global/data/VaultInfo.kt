@@ -11,6 +11,8 @@ data class VaultInfo(
     val description: String = "",
     @SerializedName("fieldDefinitionList")
     val fieldDefinitionList: List<VaultFieldDefinitionInfo> = emptyList(),
+    @SerializedName("tagDefinitionList")
+    val tagDefinitionList: List<VaultTagDefinitionInfo> = emptyList(),
     @SerializedName("recordList")
     val recordList: List<VaultRecordInfo> = emptyList(),
 )
