@@ -239,8 +239,8 @@ class TagsEditFragment : BaseFragment() {
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     private fun RecommendedTagSection(
-        tags: List<String>,
-        onSelect: (String) -> Unit,
+        tags: List<VaultTagDefinitionInfo>,
+        onSelect: (VaultTagDefinitionInfo) -> Unit,
         modifier: Modifier = Modifier,
     ) {
         Column(
@@ -259,7 +259,7 @@ class TagsEditFragment : BaseFragment() {
             ) {
                 tags.forEach { tag ->
                     SelectableTagChip(
-                        text = tag,
+                        text = tag.name,
                         onClick = { onSelect(tag) },
                     )
                 }

@@ -9,6 +9,6 @@ data class VaultRecordInfo(
     val title: String = "",
     @SerializedName("fieldList")
     val fieldList: List<VaultFieldInfo> = emptyList(),
-    @SerializedName("tagList")
-    val tagList: List<String> = emptyList(),
+    @SerializedName("tagDefinitionIdList")
+    val tagDefinitionIdList: List<String> = emptyList(),
 )

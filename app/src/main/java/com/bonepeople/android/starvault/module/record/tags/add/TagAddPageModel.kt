@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
+import com.bonepeople.android.starvault.global.util.TagDefinitionUtil
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -15,12 +16,12 @@ class TagAddPageModel : ViewModel() {
     private val _effect = Channel<TagAddEffect>(capacity = Channel.UNLIMITED)
     val effect = _effect.receiveAsFlow()
     private var initialized = false
-    private var existingTagNames: Set<String> = emptySet()
+    private var existingNormalizedTagNames: Set<String> = emptySet()
 
     fun init(existingTags: List<VaultTagDefinitionInfo>) {
         if (initialized) return
         initialized = true
-        existingTagNames = existingTags.map { it.name }.toSet()
+        existingNormalizedTagNames = existingTags.map { TagDefinitionUtil.normalizeName(it.name) }.toSet()
     }
 
     fun dispatch(action: TagAddUserAction) {
@@ -37,9 +38,10 @@ class TagAddPageModel : ViewModel() {
     private fun onConfirmClicked() {
         if (uiState.value.submitting) return
         val name = uiState.value.name.trim()
+        val normalizedName = TagDefinitionUtil.normalizeName(name)
         val nameError = when {
-            name.isEmpty() -> "请输入标签"
-            name in existingTagNames -> "标签已存在"
+            normalizedName.isEmpty() -> "请输入标签"
+            normalizedName in existingNormalizedTagNames -> "标签已存在"
             else -> ""
         }
         if (nameError.isNotEmpty()) {

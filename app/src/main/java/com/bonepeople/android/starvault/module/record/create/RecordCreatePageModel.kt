@@ -51,10 +51,9 @@ class RecordCreatePageModel : ViewModel() {
             val record = VaultRecordInfo(
                 id = UUID.randomUUID().toString(),
                 title = title,
-                tagList = uiState.value.tags.map { it.name },
                 fieldList = emptyList(),
             )
-            VaultManager.addRecord(record)
+            VaultManager.addRecord(record, uiState.value.tags)
             _effect.send(RecordCreateEffect.OpenDetail(record.id))
         }
     }

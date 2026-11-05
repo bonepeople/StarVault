@@ -9,7 +9,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import java.util.UUID
 
 class TagsEditPageModel : ViewModel() {
     val uiState: MutableStateFlow<TagsEditState> = MutableStateFlow(TagsEditState.Default)
@@ -46,8 +45,7 @@ class TagsEditPageModel : ViewModel() {
     }
 
     private fun onTagAdded(tag: VaultTagDefinitionInfo) {
-        if (tag.id.isEmpty() || tag.name.isEmpty()) return
-        addTag(tag)
+        addTag(VaultManager.findTagDefinitionByName(tag.name) ?: tag)
     }
 
     private fun finishWithCurrentTags() {
@@ -56,9 +54,8 @@ class TagsEditPageModel : ViewModel() {
         }
     }
 
-    private fun onRecommendTag(name: String) {
-        if (uiState.value.tags.any { it.name == name }) return
-        addTag(VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = name))
+    private fun onRecommendTag(tag: VaultTagDefinitionInfo) {
+        addTag(tag)
     }
 
     private fun addTag(tag: VaultTagDefinitionInfo) {
@@ -103,7 +100,7 @@ class TagsEditPageModel : ViewModel() {
     }
 
     private fun TagsEditState.withUpdatedRecommendations(): TagsEditState {
-        val selectedNames = tags.map { it.name }.toSet()
-        return copy(recommendedTags = VaultManager.recommendedTagList.filter { it !in selectedNames })
+        val selectedTagIds = tags.map { it.id }.toSet()
+        return copy(recommendedTags = VaultManager.recommendedTagDefinitionList.filter { it.id !in selectedTagIds })
     }
 }

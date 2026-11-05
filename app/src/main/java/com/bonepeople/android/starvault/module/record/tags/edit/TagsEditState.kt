@@ -9,7 +9,7 @@ data class TagsEditState(
     @SerializedName("pendingUndo")
     val pendingUndo: PendingUndoInfo? = null,
     @SerializedName("recommendedTags")
-    val recommendedTags: List<String> = emptyList(),
+    val recommendedTags: List<VaultTagDefinitionInfo> = emptyList(),
 ) {
     @Suppress("unused")
     object Preview {
@@ -18,7 +18,10 @@ data class TagsEditState(
                 VaultTagDefinitionInfo(id = "tag-dev", name = "开发"),
                 VaultTagDefinitionInfo(id = "tag-work", name = "工作"),
             ),
-            recommendedTags = listOf("家庭", "网络"),
+            recommendedTags = listOf(
+                VaultTagDefinitionInfo(id = "tag-home", name = "家庭"),
+                VaultTagDefinitionInfo(id = "tag-network", name = "网络"),
+            ),
         )
 
         val Empty = TagsEditState()

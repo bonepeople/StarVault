@@ -11,7 +11,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import java.util.UUID
 
 class RecordDetailPageModel : ViewModel() {
     val uiState: MutableStateFlow<RecordDetailState> = MutableStateFlow(RecordDetailState.Default)
@@ -72,8 +71,8 @@ class RecordDetailPageModel : ViewModel() {
     }
 
     private fun onTagsUpdated(tags: List<VaultTagDefinitionInfo>) {
-        uiState.update { it.copy(tags = tags) }
-        VaultManager.updateRecordTags(recordId, tags.map { it.name })
+        val resolvedTags = VaultManager.updateRecordTags(recordId, tags)
+        uiState.update { it.copy(tags = resolvedTags) }
     }
 
     private fun onFieldSaved(field: VaultFieldInfo) {
@@ -118,7 +117,7 @@ class RecordDetailPageModel : ViewModel() {
                 it.copy(
                     loading = false,
                     title = record.title,
-                    tags = record.tagList.map { name -> VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = name) },
+                    tags = VaultManager.findTagDefinitionsByIds(record.tagDefinitionIdList),
                     fields = recordFields.map { field -> field.toStateField() },
                 )
             }

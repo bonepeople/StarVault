@@ -12,7 +12,7 @@ import java.util.UUID
 object VaultManager {
     var currentVault = VaultInfo()
         private set
-    var recommendedTagList: List<String> = emptyList()
+    var recommendedTagDefinitionList: List<VaultTagDefinitionInfo> = emptyList()
         private set
 
     fun findRecordById(recordId: String): VaultRecordInfo? {
@@ -34,6 +34,12 @@ object VaultManager {
         return currentVault.tagDefinitionList.find { TagDefinitionUtil.normalizeName(it.name) == normalizedName }
     }
 
+    fun findTagDefinitionsByIds(definitionIds: List<String>): List<VaultTagDefinitionInfo> {
+        val definitionMap = currentVault.tagDefinitionList.associateBy { it.id }
+        return definitionIds.map { definitionMap.getValue(it) }
+    }
+
+    @Synchronized
     fun createTagDefinition(definition: VaultTagDefinitionInfo): VaultTagDefinitionInfo? {
         val name = definition.name.trim()
         if (definition.id.isEmpty() || TagDefinitionUtil.normalizeName(name).isEmpty()) return null
@@ -53,18 +59,30 @@ object VaultManager {
         return definition
     }
 
-    fun addRecord(record: VaultRecordInfo) {
-        updateVault(currentVault.copy(recordList = currentVault.recordList + record))
-    }
-
-    fun updateRecordTags(recordId: String, tagList: List<String>) {
+    @Synchronized
+    fun addRecord(record: VaultRecordInfo, tags: List<VaultTagDefinitionInfo>) {
+        val (tagDefinitionList, resolvedTags) = resolveTagDefinitions(tags)
+        val newRecord = record.copy(tagDefinitionIdList = resolvedTags.map { it.id })
         updateVault(
             currentVault.copy(
+                tagDefinitionList = tagDefinitionList,
+                recordList = currentVault.recordList + newRecord,
+            ),
+        )
+    }
+
+    @Synchronized
+    fun updateRecordTags(recordId: String, tags: List<VaultTagDefinitionInfo>): List<VaultTagDefinitionInfo> {
+        val (tagDefinitionList, resolvedTags) = resolveTagDefinitions(tags)
+        updateVault(
+            currentVault.copy(
+                tagDefinitionList = tagDefinitionList,
                 recordList = currentVault.recordList.map { record ->
-                    if (record.id == recordId) record.copy(tagList = tagList) else record
+                    if (record.id == recordId) record.copy(tagDefinitionIdList = resolvedTags.map { it.id }) else record
                 },
             ),
         )
+        return resolvedTags
     }
 
     fun updateRecordFields(recordId: String, fieldList: List<VaultFieldInfo>) {
@@ -152,6 +170,7 @@ object VaultManager {
             VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = "家庭"),
             VaultTagDefinitionInfo(id = UUID.randomUUID().toString(), name = "网络"),
         )
+        val tagDefinitionIdMap = tagDefinitionList.associate { it.name to it.id }
         updateVault(VaultInfo(
             id = UUID.randomUUID().toString(),
             name = "演示保险库",
@@ -162,7 +181,10 @@ object VaultManager {
                 VaultRecordInfo(
                     id = UUID.randomUUID().toString(),
                     title = "GitHub",
-                    tagList = listOf("开发", "工作"),
+                    tagDefinitionIdList = listOf(
+                        tagDefinitionIdMap.getValue("开发"),
+                        tagDefinitionIdMap.getValue("工作"),
+                    ),
                     fieldList = listOf(
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
@@ -207,7 +229,10 @@ object VaultManager {
                 VaultRecordInfo(
                     id = UUID.randomUUID().toString(),
                     title = "家庭 Wi‑Fi",
-                    tagList = listOf("家庭", "网络"),
+                    tagDefinitionIdList = listOf(
+                        tagDefinitionIdMap.getValue("家庭"),
+                        tagDefinitionIdMap.getValue("网络"),
+                    ),
                     fieldList = listOf(
                         VaultFieldInfo(
                             id = UUID.randomUUID().toString(),
@@ -265,12 +290,25 @@ object VaultManager {
     }
 
     private fun refreshRecommendedTags() {
-        recommendedTagList = currentVault.recordList
-            .flatMap { it.tagList }
+        val usageCountByDefinitionId = currentVault.recordList
+            .flatMap { it.tagDefinitionIdList.distinct() }
             .groupingBy { it }
             .eachCount()
-            .entries
-            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
-            .map { it.key }
+        recommendedTagDefinitionList = currentVault.tagDefinitionList.sortedWith(
+            compareByDescending<VaultTagDefinitionInfo> { usageCountByDefinitionId[it.id] ?: 0 }
+                .thenBy { TagDefinitionUtil.normalizeName(it.name) }
+                .thenBy { it.id },
+        )
+    }
+
+    private fun resolveTagDefinitions(tags: List<VaultTagDefinitionInfo>): Pair<List<VaultTagDefinitionInfo>, List<VaultTagDefinitionInfo>> {
+        val tagDefinitionList = currentVault.tagDefinitionList.toMutableList()
+        val resolvedTags = tags.map { tag ->
+            val normalizedName = TagDefinitionUtil.normalizeName(tag.name)
+            tagDefinitionList.find { it.id == tag.id }
+                ?: tagDefinitionList.find { TagDefinitionUtil.normalizeName(it.name) == normalizedName }
+                ?: tag.copy(name = tag.name.trim()).also { tagDefinitionList.add(it) }
+        }.distinctBy { it.id }
+        return tagDefinitionList to resolvedTags
     }
 }
