@@ -22,12 +22,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bonepeople.android.starvault.global.base.BaseFragment
 import com.bonepeople.android.starvault.global.util.ClickExtension
+import com.bonepeople.android.widget.ApplicationHolder
 
 class HomeFragment : BaseFragment() {
     private val viewModel: HomePageModel by viewModels()
@@ -65,6 +67,11 @@ class HomeFragment : BaseFragment() {
                 }
                 Button(onClick = ClickExtension.rememberSingleClick { action(HomeUserAction.ClickOpen) }) {
                     Text(text = "打开")
+                }
+                if (LocalInspectionMode.current || ApplicationHolder.debug) {
+                    Button(onClick = ClickExtension.rememberSingleClick { action(HomeUserAction.ClickTest) }) {
+                        Text(text = "测试")
+                    }
                 }
             }
             if (uiState.loading) {

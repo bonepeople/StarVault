@@ -7,6 +7,7 @@ import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
 import com.bonepeople.android.starvault.global.util.LogUtil
 import com.bonepeople.android.starvault.module.record.list.RecordListFragment
+import com.bonepeople.android.starvault.module.test.TestFragment
 import com.bonepeople.android.widget.util.AppToast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ class HomePageModel : ViewModel() {
         when (action) {
             HomeUserAction.ClickCreate -> createVault()
             HomeUserAction.ClickOpen -> openVault()
+            HomeUserAction.ClickTest -> StandardActivity.open(TestFragment())
         }
     }
 

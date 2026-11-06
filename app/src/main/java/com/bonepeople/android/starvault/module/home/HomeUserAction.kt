@@ -5,4 +5,6 @@ sealed interface HomeUserAction {
     object ClickCreate : HomeUserAction
     // 用户点击打开按钮
     object ClickOpen : HomeUserAction
+    // 用户点击测试按钮
+    object ClickTest : HomeUserAction
 }
