@@ -1,5 +1,6 @@
 package com.bonepeople.android.starvault.global.storage
 
+import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.EOFException
@@ -18,6 +19,7 @@ object VaultFileProtocol {
     const val ARGON2_ITERATIONS = 3
     const val ARGON2_PARALLELISM = 4
     const val SALT_SIZE = 16
+    const val FILE_KEY_SIZE = 32
 
     const val CIPHER_ID_AES_256_GCM = 1
     const val NONCE_SIZE = 12
@@ -57,6 +59,12 @@ object VaultFileProtocol {
         dataOutput.writeInt(header.cipherId)
         dataOutput.write(header.nonce)
         dataOutput.writeLong(header.payloadLength)
+    }
+
+    internal fun encodeHeader(header: VaultFileHeaderInfo): ByteArray {
+        return ByteArrayOutputStream(HEADER_SIZE).also { output ->
+            writeHeader(header, output)
+        }.toByteArray()
     }
 
     fun readHeader(input: InputStream, totalFileLength: Long): VaultFileHeaderInfo {
