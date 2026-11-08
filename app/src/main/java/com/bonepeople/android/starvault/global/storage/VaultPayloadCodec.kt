@@ -41,8 +41,9 @@ object VaultPayloadCodec {
         val stringLimitedReader = JsonStringLimitedReader(InputStreamReader(limitedInput, decoder))
         val reader = JsonReader(stringLimitedReader).apply { isLenient = false }
         return try {
-            val payload = readPayload(reader, JsonArrayCounter())
+            val sourcePayload = readPayload(reader, JsonArrayCounter())
             expectToken(reader, JsonToken.END_DOCUMENT, "JSON document end")
+            val payload = VaultSchemaMigrationRegistry.migrateToCurrent(sourcePayload)
             validatePayload(payload, expectedVaultId)
             payload
         } catch (exception: VaultCodecException) {
@@ -188,7 +189,7 @@ object VaultPayloadCodec {
             when (val name = nextUniqueName(reader, names)) {
                 "schemaVersion" -> {
                     schemaVersion = nextInt(reader, name)
-                    validateSchemaVersion(schemaVersion)
+                    VaultSchemaMigrationRegistry.requireReadableVersion(schemaVersion)
                 }
 
                 "revision" -> revision = nextLong(reader, name)
@@ -395,7 +396,7 @@ object VaultPayloadCodec {
         payload: VaultPayloadInfo,
         expectedVaultId: String? = null,
     ) {
-        validateSchemaVersion(payload.schemaVersion)
+        VaultSchemaMigrationRegistry.requireCurrentVersion(payload.schemaVersion)
         if (payload.revision < VaultFileProtocol.INITIAL_REVISION) {
             throw VaultCodecException.InvalidFile("Revision must be positive")
         }
@@ -468,12 +469,6 @@ object VaultPayloadCodec {
                     throw VaultCodecException.InvalidFile("Record references a tag definition more than once")
                 }
             }
-        }
-    }
-
-    private fun validateSchemaVersion(schemaVersion: Int) {
-        if (schemaVersion != VaultFileProtocol.SCHEMA_VERSION) {
-            throw VaultCodecException.Unsupported("Unsupported schema version: $schemaVersion")
         }
     }
 
