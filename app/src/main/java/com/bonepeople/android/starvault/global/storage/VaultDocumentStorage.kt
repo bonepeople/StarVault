@@ -14,12 +14,22 @@ class VaultDocumentStorage(context: Context) {
     private val temporaryDirectory: File = context.applicationContext.cacheDir
 
     fun read(uri: Uri, password: CharArray): VaultPayloadInfo {
+        return readVerified(uri, password) { _, document, _ -> document.payload }
+    }
+
+    internal fun <T> readVerified(
+        uri: Uri,
+        password: CharArray,
+        action: (encryptedFile: File, document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
         val stablePassword = password.copyOf()
         return try {
             withTemporaryFile(VaultOperationStage.OPEN, INPUT_PREFIX) { stableInput ->
                 copyUriToPrivateFile(uri, stableInput, VaultOperationStage.OPEN)
                 runCodec(VaultOperationStage.OPEN) {
-                    VaultFileCodec.read(stableInput, stablePassword)
+                    VaultFileCodec.readVerified(stableInput, stablePassword) { document, fileKey ->
+                        action(stableInput, document, fileKey)
+                    }
                 }
             }
         } finally {
@@ -32,31 +42,40 @@ class VaultDocumentStorage(context: Context) {
         payload: VaultPayloadInfo,
         password: CharArray,
     ): VaultFileHeaderInfo {
+        return writeVerified(uri, payload, password) { _, document, _ -> document.header }
+    }
+
+    internal fun <T> writeVerified(
+        uri: Uri,
+        payload: VaultPayloadInfo,
+        password: CharArray,
+        action: (encryptedFile: File, document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
         val stablePassword = password.copyOf()
         return try {
             withTemporaryFile(VaultOperationStage.SAVE, CANDIDATE_PREFIX) { candidate ->
-                val header = runCodec(VaultOperationStage.SAVE) {
+                runCodec(VaultOperationStage.SAVE) {
                     VaultFileCodec.write(payload, stablePassword, candidate)
                 }
                 val expectedPayload = runCodec(VaultOperationStage.VERIFY) {
                     VaultFileCodec.read(candidate, stablePassword)
                 }
                 copyPrivateFileToUri(candidate, uri)
-                verifyWrittenDocument(uri, candidate, expectedPayload, stablePassword)
-                header
+                verifyWrittenDocument(uri, candidate, expectedPayload, stablePassword, action)
             }
         } finally {
             stablePassword.fill('\u0000')
         }
     }
 
-    private fun verifyWrittenDocument(
+    private fun <T> verifyWrittenDocument(
         uri: Uri,
         candidate: File,
         expectedPayload: VaultPayloadInfo,
         password: CharArray,
-    ) {
-        try {
+        action: (encryptedFile: File, document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
+        return try {
             withTemporaryFile(VaultOperationStage.VERIFY, READ_BACK_PREFIX) { readBack ->
                 copyUriToPrivateFile(uri, readBack, VaultOperationStage.VERIFY)
                 if (!contentEquals(candidate, readBack)) {
@@ -65,14 +84,16 @@ class VaultDocumentStorage(context: Context) {
                         IOException("Written document does not match the encrypted candidate"),
                     )
                 }
-                val actualPayload = runCodec(VaultOperationStage.VERIFY) {
-                    VaultFileCodec.read(readBack, password)
-                }
-                if (actualPayload != expectedPayload) {
-                    throw VaultStorageException.IoFailure(
-                        VaultOperationStage.VERIFY,
-                        IOException("Written document does not match the candidate payload"),
-                    )
+                runCodec(VaultOperationStage.VERIFY) {
+                    VaultFileCodec.readVerified(readBack, password) { document, fileKey ->
+                        if (document.payload != expectedPayload) {
+                            throw VaultStorageException.IoFailure(
+                                VaultOperationStage.VERIFY,
+                                IOException("Written document does not match the candidate payload"),
+                            )
+                        }
+                        action(readBack, document, fileKey)
+                    }
                 }
             }
         } catch (exception: VaultStorageException.IoFailure) {

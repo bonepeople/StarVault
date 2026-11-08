@@ -1,15 +1,12 @@
 package com.bonepeople.android.starvault.global
 
-import android.net.Uri
 import com.bonepeople.android.starvault.global.data.VaultFieldDefinitionInfo
 import com.bonepeople.android.starvault.global.data.VaultFieldInfo
 import com.bonepeople.android.starvault.global.data.VaultFieldSnapshotInfo
 import com.bonepeople.android.starvault.global.data.VaultInfo
 import com.bonepeople.android.starvault.global.data.VaultRecordInfo
 import com.bonepeople.android.starvault.global.data.VaultTagDefinitionInfo
-import com.bonepeople.android.starvault.global.storage.VaultPayloadInfo
 import com.bonepeople.android.starvault.global.storage.VaultSessionInfo
-import com.bonepeople.android.starvault.global.storage.VaultSessionKeyMaterial
 import com.bonepeople.android.starvault.global.util.TagDefinitionUtil
 import java.util.UUID
 
@@ -22,17 +19,7 @@ object VaultManager {
         private set
 
     @Synchronized
-    internal fun establishSession(
-        payload: VaultPayloadInfo,
-        uri: Uri,
-        salt: ByteArray,
-        fileKey: ByteArray,
-    ) {
-        val newSession = VaultSessionInfo(
-            uri = uri,
-            payload = payload,
-            keyMaterial = VaultSessionKeyMaterial(salt, fileKey),
-        )
+    internal fun establishSession(newSession: VaultSessionInfo) {
         val previousSession = currentSession
         currentSession = newSession
         currentVault = newSession.vault

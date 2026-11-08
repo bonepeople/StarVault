@@ -31,13 +31,22 @@ object VaultFileCodec {
     }
 
     fun read(sourceFile: File, password: CharArray): VaultPayloadInfo {
+        return readVerified(sourceFile, password) { document, _ -> document.payload }
+    }
+
+    internal fun <T> readVerified(
+        sourceFile: File,
+        password: CharArray,
+        action: (document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
         val totalFileLength = sourceFile.length()
         val header = readHeader(sourceFile, totalFileLength)
         val authenticatedHeader = VaultFileProtocol.encodeHeader(header)
         val key = VaultCryptography.deriveKey(password, header.salt)
         return try {
             authenticate(sourceFile, totalFileLength, header, authenticatedHeader, key)
-            decode(sourceFile, totalFileLength, header, authenticatedHeader, key)
+            val payload = decode(sourceFile, totalFileLength, header, authenticatedHeader, key)
+            action(VaultDecodedDocumentInfo(header, payload), key)
         } finally {
             key.fill(0)
         }
