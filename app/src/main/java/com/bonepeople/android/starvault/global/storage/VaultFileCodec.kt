@@ -41,14 +41,24 @@ object VaultFileCodec {
     ): T {
         val totalFileLength = sourceFile.length()
         val header = readHeader(sourceFile, totalFileLength)
-        val authenticatedHeader = VaultFileProtocol.encodeHeader(header)
         val key = VaultCryptography.deriveKey(password, header.salt)
+        return readVerified(sourceFile, totalFileLength, header, key, null, action)
+    }
+
+    internal fun <T> readVerifiedWithKey(
+        sourceFile: File,
+        expectedSalt: ByteArray,
+        fileKey: ByteArray,
+        action: (document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
+        val key = fileKey.copyOf()
         return try {
-            authenticate(sourceFile, totalFileLength, header, authenticatedHeader, key)
-            val payload = decode(sourceFile, totalFileLength, header, authenticatedHeader, key)
-            action(VaultDecodedDocumentInfo(header, payload), key)
-        } finally {
+            val totalFileLength = sourceFile.length()
+            val header = readHeader(sourceFile, totalFileLength)
+            readVerified(sourceFile, totalFileLength, header, key, expectedSalt, action)
+        } catch (throwable: Throwable) {
             key.fill(0)
+            throw throwable
         }
     }
 
@@ -59,6 +69,36 @@ object VaultFileCodec {
         salt: ByteArray,
         nonce: ByteArray,
     ): VaultFileHeaderInfo {
+        val key = VaultCryptography.deriveKey(password, salt)
+        return try {
+            writeEncrypted(payload, targetFile, salt, nonce, key)
+        } finally {
+            key.fill(0)
+        }
+    }
+
+    internal fun writeWithKey(
+        payload: VaultPayloadInfo,
+        targetFile: File,
+        salt: ByteArray,
+        fileKey: ByteArray,
+    ): VaultFileHeaderInfo {
+        val nonce = ByteArray(VaultFileProtocol.NONCE_SIZE).also(secureRandom::nextBytes)
+        val key = fileKey.copyOf()
+        return try {
+            writeEncrypted(payload, targetFile, salt, nonce, key)
+        } finally {
+            key.fill(0)
+        }
+    }
+
+    private fun writeEncrypted(
+        payload: VaultPayloadInfo,
+        targetFile: File,
+        salt: ByteArray,
+        nonce: ByteArray,
+        key: ByteArray,
+    ): VaultFileHeaderInfo {
         val snapshot = immutableSnapshot(payload)
         val payloadLength = countCompressedLength(snapshot)
         val header = VaultFileHeaderInfo(
@@ -68,28 +108,23 @@ object VaultFileCodec {
             payloadLength = payloadLength,
         )
         val authenticatedHeader = VaultFileProtocol.encodeHeader(header)
-        val key = VaultCryptography.deriveKey(password, header.salt)
-        try {
-            BufferedOutputStream(targetFile.outputStream()).use { fileOutput ->
-                fileOutput.write(authenticatedHeader)
-                val cipher = VaultCryptography.createCipher(
-                    mode = Cipher.ENCRYPT_MODE,
-                    key = key,
-                    nonce = header.nonce,
-                    authenticatedHeader = authenticatedHeader,
-                )
-                val compressedCounter = CountingOutputStream(
-                    CipherOutputStream(NonClosingOutputStream(fileOutput), cipher),
-                )
-                GZIPOutputStream(compressedCounter).use { gzipOutput ->
-                    VaultPayloadCodec.write(snapshot, gzipOutput)
-                }
-                if (compressedCounter.byteCount != payloadLength) {
-                    throw VaultCodecException.InvalidFile("Compressed payload length changed during encoding")
-                }
+        BufferedOutputStream(targetFile.outputStream()).use { fileOutput ->
+            fileOutput.write(authenticatedHeader)
+            val cipher = VaultCryptography.createCipher(
+                mode = Cipher.ENCRYPT_MODE,
+                key = key,
+                nonce = header.nonce,
+                authenticatedHeader = authenticatedHeader,
+            )
+            val compressedCounter = CountingOutputStream(
+                CipherOutputStream(NonClosingOutputStream(fileOutput), cipher),
+            )
+            GZIPOutputStream(compressedCounter).use { gzipOutput ->
+                VaultPayloadCodec.write(snapshot, gzipOutput)
             }
-        } finally {
-            key.fill(0)
+            if (compressedCounter.byteCount != payloadLength) {
+                throw VaultCodecException.InvalidFile("Compressed payload length changed during encoding")
+            }
         }
         val expectedFileLength = VaultFileProtocol.HEADER_SIZE + payloadLength +
             VaultFileProtocol.AUTHENTICATION_TAG_SIZE
@@ -97,6 +132,27 @@ object VaultFileCodec {
             throw VaultCodecException.InvalidFile("Encrypted candidate length is invalid")
         }
         return header
+    }
+
+    private fun <T> readVerified(
+        sourceFile: File,
+        totalFileLength: Long,
+        header: VaultFileHeaderInfo,
+        key: ByteArray,
+        expectedSalt: ByteArray?,
+        action: (document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
+        val authenticatedHeader = VaultFileProtocol.encodeHeader(header)
+        return try {
+            authenticate(sourceFile, totalFileLength, header, authenticatedHeader, key)
+            if (expectedSalt != null && !header.salt.contentEquals(expectedSalt)) {
+                throw VaultCodecException.InvalidFile("File salt does not match the active session")
+            }
+            val payload = decode(sourceFile, totalFileLength, header, authenticatedHeader, key)
+            action(VaultDecodedDocumentInfo(header, payload), key)
+        } finally {
+            key.fill(0)
+        }
     }
 
     private fun readHeader(sourceFile: File, totalFileLength: Long): VaultFileHeaderInfo {

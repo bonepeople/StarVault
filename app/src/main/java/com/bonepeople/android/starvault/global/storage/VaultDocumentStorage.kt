@@ -60,8 +60,114 @@ class VaultDocumentStorage(context: Context) {
                 val expectedPayload = runCodec(VaultOperationStage.VERIFY) {
                     VaultFileCodec.read(candidate, stablePassword)
                 }
-                copyPrivateFileToUri(candidate, uri)
-                verifyWrittenDocument(uri, candidate, expectedPayload, stablePassword, action)
+                copyPrivateFileToUri(candidate, uri, VaultOperationStage.SAVE)
+                verifyWrittenDocument(
+                    uri = uri,
+                    candidate = candidate,
+                    expectedPayload = expectedPayload,
+                    stage = VaultOperationStage.VERIFY,
+                    decode = { file, decodedAction ->
+                        VaultFileCodec.readVerified(file, stablePassword, decodedAction)
+                    },
+                    action = action,
+                )
+            }
+        } finally {
+            stablePassword.fill('\u0000')
+        }
+    }
+
+    internal fun <T> writeVerifiedWithKey(
+        uri: Uri,
+        payload: VaultPayloadInfo,
+        salt: ByteArray,
+        fileKey: ByteArray,
+        action: (encryptedFile: File, document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
+        return withTemporaryFile(VaultOperationStage.SAVE, CANDIDATE_PREFIX) { candidate ->
+            runCodec(VaultOperationStage.SAVE) {
+                VaultFileCodec.writeWithKey(payload, candidate, salt, fileKey)
+            }
+            val expectedPayload = runCodec(VaultOperationStage.VERIFY) {
+                VaultFileCodec.readVerifiedWithKey(candidate, salt, fileKey) { document, _ ->
+                    document.payload
+                }
+            }
+            copyPrivateFileToUri(candidate, uri, VaultOperationStage.SAVE)
+            verifyWrittenDocument(
+                uri = uri,
+                candidate = candidate,
+                expectedPayload = expectedPayload,
+                stage = VaultOperationStage.VERIFY,
+                decode = { file, decodedAction ->
+                    VaultFileCodec.readVerifiedWithKey(file, salt, fileKey, decodedAction)
+                },
+                action = action,
+            )
+        }
+    }
+
+    internal fun verifyPrivateFileWithKey(
+        sourceFile: File,
+        salt: ByteArray,
+        fileKey: ByteArray,
+        expectedVaultId: String,
+        expectedRevision: Long,
+        stage: VaultOperationStage,
+    ) {
+        val payload = runCodec(stage) {
+            VaultFileCodec.readVerifiedWithKey(sourceFile, salt, fileKey) { document, _ ->
+                document.payload
+            }
+        }
+        if (
+            payload.vault.id != expectedVaultId ||
+            payload.revision != expectedRevision
+        ) {
+            throw VaultStorageException.InvalidFile(
+                stage,
+                IllegalArgumentException("Private file does not match the expected vault version"),
+            )
+        }
+    }
+
+    internal fun <T> recoverVerified(
+        uri: Uri,
+        sourceFile: File,
+        password: CharArray,
+        expectedVaultId: String,
+        expectedRevision: Long,
+        action: (encryptedFile: File, document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
+    ): T {
+        val stablePassword = password.copyOf()
+        return try {
+            withTemporaryFile(VaultOperationStage.RECOVER, RECOVERY_PREFIX) { candidate ->
+                copyPrivateFile(sourceFile, candidate, VaultOperationStage.RECOVER)
+                val expectedPayload = runCodec(VaultOperationStage.RECOVER) {
+                    VaultFileCodec.readVerified(candidate, stablePassword) { document, _ ->
+                        document.payload
+                    }
+                }
+                if (
+                    expectedPayload.vault.id != expectedVaultId ||
+                    expectedPayload.revision != expectedRevision
+                ) {
+                    throw VaultStorageException.InvalidFile(
+                        VaultOperationStage.RECOVER,
+                        IllegalArgumentException("Valid copy does not match the recovery target"),
+                    )
+                }
+                copyPrivateFileToUri(candidate, uri, VaultOperationStage.RECOVER)
+                verifyWrittenDocument(
+                    uri = uri,
+                    candidate = candidate,
+                    expectedPayload = expectedPayload,
+                    stage = VaultOperationStage.RECOVER,
+                    decode = { file, decodedAction ->
+                        VaultFileCodec.readVerified(file, stablePassword, decodedAction)
+                    },
+                    action = action,
+                )
             }
         } finally {
             stablePassword.fill('\u0000')
@@ -72,23 +178,24 @@ class VaultDocumentStorage(context: Context) {
         uri: Uri,
         candidate: File,
         expectedPayload: VaultPayloadInfo,
-        password: CharArray,
+        stage: VaultOperationStage,
+        decode: (File, (VaultDecodedDocumentInfo, ByteArray) -> T) -> T,
         action: (encryptedFile: File, document: VaultDecodedDocumentInfo, fileKey: ByteArray) -> T,
     ): T {
         return try {
-            withTemporaryFile(VaultOperationStage.VERIFY, READ_BACK_PREFIX) { readBack ->
-                copyUriToPrivateFile(uri, readBack, VaultOperationStage.VERIFY)
-                if (!contentEquals(candidate, readBack)) {
+            withTemporaryFile(stage, READ_BACK_PREFIX) { readBack ->
+                copyUriToPrivateFile(uri, readBack, stage)
+                if (!contentEquals(candidate, readBack, stage)) {
                     throw VaultStorageException.IoFailure(
-                        VaultOperationStage.VERIFY,
+                        stage,
                         IOException("Written document does not match the encrypted candidate"),
                     )
                 }
-                runCodec(VaultOperationStage.VERIFY) {
-                    VaultFileCodec.readVerified(readBack, password) { document, fileKey ->
+                runCodec(stage) {
+                    decode(readBack) { document, fileKey ->
                         if (document.payload != expectedPayload) {
                             throw VaultStorageException.IoFailure(
-                                VaultOperationStage.VERIFY,
+                                stage,
                                 IOException("Written document does not match the candidate payload"),
                             )
                         }
@@ -99,7 +206,7 @@ class VaultDocumentStorage(context: Context) {
         } catch (exception: VaultStorageException.IoFailure) {
             throw exception
         } catch (exception: VaultStorageException) {
-            throw VaultStorageException.IoFailure(VaultOperationStage.VERIFY, exception)
+            throw VaultStorageException.IoFailure(stage, exception)
         }
     }
 
@@ -129,7 +236,11 @@ class VaultDocumentStorage(context: Context) {
         }
     }
 
-    private fun copyPrivateFileToUri(sourceFile: File, uri: Uri) {
+    private fun copyPrivateFileToUri(
+        sourceFile: File,
+        uri: Uri,
+        stage: VaultOperationStage,
+    ) {
         try {
             val target = contentResolver.openOutputStream(uri, WRITE_MODE)
                 ?: throw IOException("Document provider returned no output stream")
@@ -139,13 +250,36 @@ class VaultDocumentStorage(context: Context) {
                 }
             }
         } catch (exception: IOException) {
-            throw VaultStorageException.IoFailure(VaultOperationStage.SAVE, exception)
+            throw VaultStorageException.IoFailure(stage, exception)
         } catch (exception: SecurityException) {
-            throw VaultStorageException.IoFailure(VaultOperationStage.SAVE, exception)
+            throw VaultStorageException.IoFailure(stage, exception)
         } catch (exception: IllegalArgumentException) {
-            throw VaultStorageException.IoFailure(VaultOperationStage.SAVE, exception)
+            throw VaultStorageException.IoFailure(stage, exception)
         } catch (exception: UnsupportedOperationException) {
-            throw VaultStorageException.IoFailure(VaultOperationStage.SAVE, exception)
+            throw VaultStorageException.IoFailure(stage, exception)
+        }
+    }
+
+    private fun copyPrivateFile(
+        sourceFile: File,
+        targetFile: File,
+        stage: VaultOperationStage,
+    ) {
+        try {
+            BufferedInputStream(sourceFile.inputStream()).use { input ->
+                BufferedOutputStream(targetFile.outputStream()).use { output ->
+                    copyWithinFileLimit(input, output, stage)
+                }
+            }
+            if (!contentEquals(sourceFile, targetFile, stage)) {
+                throw IOException("Private recovery candidate does not match the valid copy")
+            }
+        } catch (exception: VaultStorageException) {
+            throw exception
+        } catch (exception: IOException) {
+            throw VaultStorageException.IoFailure(stage, exception)
+        } catch (exception: SecurityException) {
+            throw VaultStorageException.IoFailure(stage, exception)
         }
     }
 
@@ -183,7 +317,11 @@ class VaultDocumentStorage(context: Context) {
         }
     }
 
-    private fun contentEquals(expectedFile: File, actualFile: File): Boolean {
+    private fun contentEquals(
+        expectedFile: File,
+        actualFile: File,
+        stage: VaultOperationStage,
+    ): Boolean {
         try {
             if (expectedFile.length() != actualFile.length()) return false
             return BufferedInputStream(expectedFile.inputStream()).use { expected ->
@@ -192,9 +330,9 @@ class VaultDocumentStorage(context: Context) {
                 }
             }
         } catch (exception: IOException) {
-            throw VaultStorageException.IoFailure(VaultOperationStage.VERIFY, exception)
+            throw VaultStorageException.IoFailure(stage, exception)
         } catch (exception: SecurityException) {
-            throw VaultStorageException.IoFailure(VaultOperationStage.VERIFY, exception)
+            throw VaultStorageException.IoFailure(stage, exception)
         }
     }
 
@@ -296,6 +434,7 @@ class VaultDocumentStorage(context: Context) {
     companion object {
         private const val INPUT_PREFIX = "vault-input-"
         private const val CANDIDATE_PREFIX = "vault-candidate-"
+        private const val RECOVERY_PREFIX = "vault-recovery-"
         private const val READ_BACK_PREFIX = "vault-read-back-"
         private const val FILE_SUFFIX = ".starvault"
         private const val WRITE_MODE = "wt"

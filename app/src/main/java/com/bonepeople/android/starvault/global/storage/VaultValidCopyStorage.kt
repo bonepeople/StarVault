@@ -75,6 +75,28 @@ internal class VaultValidCopyStorage(context: Context) {
         }
     }
 
+    fun <T> useCopy(
+        vaultId: String,
+        operationStage: VaultOperationStage,
+        action: (File) -> T,
+    ): T {
+        validateVaultId(vaultId, operationStage)
+        val directory = requireCopyDirectory(operationStage)
+        val copyFile = File(directory, vaultId + FILE_SUFFIX)
+        try {
+            if (!copyFile.isFile) {
+                throw IOException("Valid copy is unavailable")
+            }
+            return action(copyFile)
+        } catch (exception: VaultStorageException) {
+            throw exception
+        } catch (exception: IOException) {
+            throw VaultStorageException.IoFailure(operationStage, exception)
+        } catch (exception: SecurityException) {
+            throw VaultStorageException.IoFailure(operationStage, exception)
+        }
+    }
+
     private fun requireCopyDirectory(operationStage: VaultOperationStage): File {
         try {
             if (!copyDirectory.exists() && !copyDirectory.mkdirs()) {

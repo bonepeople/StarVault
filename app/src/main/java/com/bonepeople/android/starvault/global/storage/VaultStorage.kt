@@ -69,6 +69,97 @@ class VaultStorage(context: Context) {
         }
     }
 
+    fun save(): VaultStorageResultInfo {
+        return synchronized(operationLock) {
+            val currentSession = requireCurrentSession(VaultOperationStage.SAVE)
+            val recoveryInfo = VaultRecoveryInfo(
+                uri = currentSession.uri,
+                vaultId = currentSession.vaultId,
+                revision = currentSession.revision,
+            )
+            var recoveryAvailable = false
+            var preparedDocument: PreparedDocument? = null
+            try {
+                val currentPayload = currentSession.snapshotPayload()
+                val payload = currentPayload.copy(
+                    revision = nextRevision(currentPayload.revision),
+                )
+                val document = currentSession.useKeyMaterial { salt, fileKey ->
+                    validCopyStorage.useCopy(
+                        vaultId = recoveryInfo.vaultId,
+                        operationStage = VaultOperationStage.SAVE,
+                    ) { validCopy ->
+                        documentStorage.verifyPrivateFileWithKey(
+                            sourceFile = validCopy,
+                            salt = salt,
+                            fileKey = fileKey,
+                            expectedVaultId = recoveryInfo.vaultId,
+                            expectedRevision = recoveryInfo.revision,
+                            stage = VaultOperationStage.SAVE,
+                        )
+                    }
+                    recoveryAvailable = true
+                    prepareSavedDocument(currentSession.uri, payload, salt, fileKey)
+                }
+                preparedDocument = document
+                commitPreparedDocument(
+                    currentSession.uri,
+                    document,
+                    VaultOperationStage.SAVE,
+                ).also {
+                    preparedDocument = null
+                }
+            } catch (throwable: Throwable) {
+                preparedDocument?.close()?.let(throwable::addSuppressed)
+                if (
+                    recoveryAvailable &&
+                    throwable is VaultStorageException.IoFailure &&
+                    throwable.recoveryInfo == null
+                ) {
+                    throw VaultStorageException.IoFailure(
+                        stage = throwable.stage,
+                        cause = throwable,
+                        recoveryInfo = recoveryInfo,
+                    )
+                }
+                throw throwable
+            }
+        }
+    }
+
+    fun recover(
+        recoveryInfo: VaultRecoveryInfo,
+        password: CharArray,
+    ): VaultStorageResultInfo {
+        return synchronized(operationLock) {
+            val currentSession = requireCurrentSession(VaultOperationStage.RECOVER)
+            requireRecoveryTarget(currentSession, recoveryInfo)
+            val stablePassword = password.copyOf()
+            var preparedDocument: PreparedDocument? = null
+            try {
+                val document = validCopyStorage.useCopy(
+                    vaultId = recoveryInfo.vaultId,
+                    operationStage = VaultOperationStage.RECOVER,
+                ) { validCopy ->
+                    prepareRecoveredDocument(recoveryInfo, validCopy, stablePassword)
+                }
+                preparedDocument = document
+                commitPreparedDocument(
+                    recoveryInfo.uri,
+                    document,
+                    VaultOperationStage.RECOVER,
+                ).also {
+                    preparedDocument = null
+                }
+            } catch (throwable: Throwable) {
+                preparedDocument?.close()?.let(throwable::addSuppressed)
+                throw throwable
+            } finally {
+                stablePassword.fill('\u0000')
+            }
+        }
+    }
+
     private fun prepareCreatedDocument(
         uri: Uri,
         payload: VaultPayloadInfo,
@@ -97,6 +188,70 @@ class VaultStorage(context: Context) {
         return try {
             documentStorage.readVerified(uri, password) { encryptedFile, document, fileKey ->
                 prepareDocument(uri, encryptedFile, document, fileKey, VaultOperationStage.OPEN).also {
+                    capturedDocument = it
+                }
+            }.also {
+                capturedDocument = null
+            }
+        } catch (throwable: Throwable) {
+            capturedDocument?.close()?.let(throwable::addSuppressed)
+            throw throwable
+        }
+    }
+
+    private fun prepareSavedDocument(
+        uri: Uri,
+        payload: VaultPayloadInfo,
+        salt: ByteArray,
+        fileKey: ByteArray,
+    ): PreparedDocument {
+        var capturedDocument: PreparedDocument? = null
+        return try {
+            documentStorage.writeVerifiedWithKey(
+                uri = uri,
+                payload = payload,
+                salt = salt,
+                fileKey = fileKey,
+            ) { encryptedFile, document, verifiedFileKey ->
+                prepareDocument(
+                    uri,
+                    encryptedFile,
+                    document,
+                    verifiedFileKey,
+                    VaultOperationStage.SAVE,
+                ).also {
+                    capturedDocument = it
+                }
+            }.also {
+                capturedDocument = null
+            }
+        } catch (throwable: Throwable) {
+            capturedDocument?.close()?.let(throwable::addSuppressed)
+            throw throwable
+        }
+    }
+
+    private fun prepareRecoveredDocument(
+        recoveryInfo: VaultRecoveryInfo,
+        validCopy: File,
+        password: CharArray,
+    ): PreparedDocument {
+        var capturedDocument: PreparedDocument? = null
+        return try {
+            documentStorage.recoverVerified(
+                uri = recoveryInfo.uri,
+                sourceFile = validCopy,
+                password = password,
+                expectedVaultId = recoveryInfo.vaultId,
+                expectedRevision = recoveryInfo.revision,
+            ) { encryptedFile, document, fileKey ->
+                prepareDocument(
+                    recoveryInfo.uri,
+                    encryptedFile,
+                    document,
+                    fileKey,
+                    VaultOperationStage.RECOVER,
+                ).also {
                     capturedDocument = it
                 }
             }.also {
@@ -180,6 +335,39 @@ class VaultStorage(context: Context) {
             vaultId = session.vaultId,
             revision = session.revision,
         )
+    }
+
+    private fun requireCurrentSession(operationStage: VaultOperationStage): VaultSessionInfo {
+        return VaultManager.currentSession ?: throw VaultStorageException.IoFailure(
+            operationStage,
+            IllegalStateException("No active vault session"),
+        )
+    }
+
+    private fun requireRecoveryTarget(
+        currentSession: VaultSessionInfo,
+        recoveryInfo: VaultRecoveryInfo,
+    ) {
+        if (
+            currentSession.uri != recoveryInfo.uri ||
+            currentSession.vaultId != recoveryInfo.vaultId ||
+            currentSession.revision != recoveryInfo.revision
+        ) {
+            throw VaultStorageException.InvalidFile(
+                VaultOperationStage.RECOVER,
+                IllegalArgumentException("Recovery target does not match the active session"),
+            )
+        }
+    }
+
+    private fun nextRevision(currentRevision: Long): Long {
+        if (currentRevision == Long.MAX_VALUE) {
+            throw VaultStorageException.InvalidFile(
+                VaultOperationStage.SAVE,
+                ArithmeticException("Vault revision cannot be incremented"),
+            )
+        }
+        return currentRevision + 1L
     }
 
     private fun queryDisplayName(uri: Uri, operationStage: VaultOperationStage): String {

@@ -22,6 +22,10 @@ sealed class VaultStorageException(
         cause: Throwable? = null,
     ) : VaultStorageException(stage, "Vault resource limit exceeded: $limit", cause)
 
-    class IoFailure(stage: VaultOperationStage, cause: Throwable? = null) :
+    class IoFailure(
+        stage: VaultOperationStage,
+        cause: Throwable? = null,
+        val recoveryInfo: VaultRecoveryInfo? = null,
+    ) :
         VaultStorageException(stage, "Vault storage I/O failed", cause)
 }
