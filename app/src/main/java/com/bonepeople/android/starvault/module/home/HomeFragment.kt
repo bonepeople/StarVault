@@ -63,7 +63,7 @@ class HomeFragment : BaseFragment() {
             ) {
                 Text(text = "HomeFragment")
                 Button(onClick = ClickExtension.rememberSingleClick { action(HomeUserAction.ClickCreate) }) {
-                    Text(text = "创建")
+                    Text(text = "创建密码库")
                 }
                 Button(onClick = ClickExtension.rememberSingleClick { action(HomeUserAction.ClickOpen) }) {
                     Text(text = "打开")

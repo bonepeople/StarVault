@@ -5,10 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.bonepeople.android.base.activity.StandardActivity
 import com.bonepeople.android.base.util.CoroutineExtension.launchOnDefault
 import com.bonepeople.android.starvault.global.VaultManager
-import com.bonepeople.android.starvault.global.util.LogUtil
 import com.bonepeople.android.starvault.module.record.list.RecordListFragment
 import com.bonepeople.android.starvault.module.test.TestFragment
-import com.bonepeople.android.widget.util.AppToast
+import com.bonepeople.android.starvault.module.vault.create.VaultCreateFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -31,13 +30,7 @@ class HomePageModel : ViewModel() {
     }
 
     fun createVault() {
-        viewModelScope.launchOnDefault {
-            uiState.update { it.copy(loading = true) }
-            delay(500)
-            LogUtil.test.info("点击创建")
-            AppToast.show("施工中")
-            uiState.update { it.copy(loading = false) }
-        }
+        StandardActivity.open(VaultCreateFragment())
     }
 
     fun openVault() {
